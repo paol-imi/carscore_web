@@ -13,7 +13,10 @@ terraform {
   cloud {
     organization = "cars-org"
     workspaces {
-      name = "${var.WORKSPACE_PREFIX}*"
+      # FIXME: It is not possible to pass variables here, so we need to use
+      #        an hardcoded value for the workspace prefix.
+      # name = "${var.WORKSPACE_PREFIX}*"
+      name = "cars-workspace-branch-*"
     }
   }
 
