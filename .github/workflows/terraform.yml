@@ -6,7 +6,7 @@ on:
   push:
     branches: [main, dev, "feature-**", "release-**", "hotfix-**"]
     paths: ["terraform/**", ".github/workflows/terraform.yml"]
-  pull_request:
+  pull_request: 
     branches: [main, dev, "feature-**", "release-**", "hotfix-**"]
     paths: ["terraform/**", ".github/workflows/terraform.yml"]
     # TODO: the "edited" tag will trigger the vent when base branch is changed (which is what we want),
