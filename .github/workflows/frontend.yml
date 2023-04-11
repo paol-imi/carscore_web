@@ -3,10 +3,10 @@ name: "Deploy frontend"
 on:
   push:
     branches: [main]
-    paths: ["frontend/**"]
+    paths: ["frontend/**", ".github/workflows/frontend.yml"]
   pull_request:
     branches: [main]
-    paths: ["frontend/**"]
+    paths: ["frontend/**", ".github/workflows/frontend.yml"]
 
 # The aws group ensures that only one workflow at a time can modify the AWS
 # infrastructure
@@ -50,6 +50,6 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: cars-frontend
-          directory: dist
+          directory: ./dist
           # Optional: Enable this if you want to have GitHub Deployments triggered
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
