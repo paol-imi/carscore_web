@@ -51,9 +51,15 @@ jobs:
           REF="${{ github.event_name  == 'pull_request' && github.base_ref || github.ref }}"
           BRANCH=$(basename "$REF")
           WORKSPACE_PREFIX="cars-workspace-branch-"
-          WORKSPACE="{$WORKSPACE_PREFIX}{$BRANCH}"
+          WORKSPACE="$WORKSPACE_PREFIX$BRANCH"
           ENV="${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}"
-          INPUT='-input=false -var="ENV={$ENV}" -var="WORKSPACE_PREFIX={$WORKSPACE_PREFIX}" -var="AWS_REGION=${{ secrets.AWS_REGION }}"'
+          INPUT='-input=false -var="ENV=$ENV" -var="WORKSPACE_PREFIX=$WORKSPACE_PREFIX" -var="AWS_REGION=${{ secrets.AWS_REGION }}"'
+
+          echo "REF: $REF"
+          echo "BRANCH: $BRANCH"
+          echo "WORKSPACE: $WORKSPACE"
+          echo "ENV: $ENV"
+          echo "INPUT: $INPUT"
 
           echo "WORKSPACE=$WORKSPACE" >> "$GITHUB_OUTPUT"
           echo "INPUT=$INPUT" >> "$GITHUB_OUTPUT"
