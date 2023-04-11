@@ -49,10 +49,10 @@ jobs:
         id: set_env
         run: |
           REF="${{ github.event_name  == 'pull_request' && github.base_ref || github.ref }}"
-          BRANCH=basename $REF
+          BRANCH=$(basename "$REF")
           WORKSPACE_PREFIX="cars-workspace-branch-"
           WORKSPACE="{$WORKSPACE_PREFIX}{$BRANCH}"
-          ENV=${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
+          ENV="${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}"
           INPUT='-input=false -var="ENV={$ENV}" -var="WORKSPACE_PREFIX={$WORKSPACE_PREFIX}" -var="AWS_REGION=${{ secrets.AWS_REGION }}"'
 
           echo "WORKSPACE=$WORKSPACE" >> "$GITHUB_OUTPUT"
