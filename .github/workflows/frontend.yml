@@ -1,17 +1,15 @@
-name: "Deploy to Production"
+name: "Deploy frontend"
 
 on:
   push:
-    branches:
-      - main
-    paths:
-      - "frontend/**"
+    branches: [main]
+    paths: ["frontend/**"]
   pull_request:
-    branches:
-      - main
-    paths:
-      - "frontend/**"
+    branches: [main]
+    paths: ["frontend/**"]
 
+# The aws group ensures that only one workflow at a time can modify the AWS
+# infrastructure
 concurrency: aws-${{ github.ref }}
 
 jobs:
@@ -38,13 +36,6 @@ jobs:
         id: terraform-output
         run: terraform output -json
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          role-to-assume: arn:aws:iam::513968370036:role/GithubWebIdentity
-          role-duration-seconds: 900 # the ttl of the session, in seconds.
-          aws-region: us-east-1
-
       - name: Build React App
         run: |
           npm ci
@@ -54,11 +45,8 @@ jobs:
         uses: cloudflare/pages-action@v1
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: YOUR_ACCOUNT_ID
-          projectName: YOUR_PROJECT_NAME
-          directory: YOUR_ASSET_DIRECTORY
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: carsdemo.win
+          directory: dist
           # Optional: Enable this if you want to have GitHub Deployments triggered
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Deploy app build to S3 bucket
-        run: aws s3 sync ./dist/ s3://cars-frontend-bucket --delete

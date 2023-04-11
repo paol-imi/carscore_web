@@ -4,17 +4,19 @@ on:
   # Trigger the workflow on push or pull request, for the main, dev and feature
   # branches. Only run the workflow if the terraform directory has changed
   push:
-    branches: [main]
-    paths: ["terraform/**"]
+    branches: [main, dev, "feature-**", "release-**", "hotfix-**"]
+    paths: ["terraform/**", ".github/workflows/terraform.yml"]
   pull_request:
-    branches: [main]
-    paths: ["terraform/**"]
+    branches: [main, dev, "feature-**", "release-**", "hotfix-**"]
+    paths: ["terraform/**", ".github/workflows/terraform.yml"]
     # TODO: the "edited" tag will trigger the vent when base branch is changed (which is what we want),
     #      but it will also trigger when the PR is edited (which we don't want).
     #      We leave this edge case open, to avoid having the workflow re-run for each small text changes of the PR.
     types: [opened, synchronize, reopened]
+  delete:
+    branches: [main, dev, "feature-**", "release-**", "hotfix-**"]
 
-# The aws group ensures that only one workflow at a time can modify the AWS 
+# The aws group ensures that only one workflow at a time can modify the AWS
 # infrastructure
 concurrency: aws-${{ github.ref }}
 
@@ -45,28 +47,26 @@ jobs:
       # Set the ENV variable based on the branch name
       - name: Set environment
         id: set_env
-        run: echo "ENV=${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}" >> "$GITHUB_OUTPUT"
-
-      # Select the workspace based on the branch name. If the workspace does 
-      # not exist, create it.
-      - name: Terraform set workspace
-        id: set_workspace
         run: |
-          if [[ ${{ github.event_name }} == 'push' ]]; then
-            BRANCH=$(basename ${{ github.ref }})
-          elif [[ ${{ github.event_name }} == 'pull_request' ]]; then
-            BRANCH=$(basename ${{ github.base_ref }})
-          fi
-
-          WORKSPACE="cars-workspace-branch-$BRANCH"
-
-          if ! terraform workspace list | grep -q "^$WORKSPACE$"; then
-            terraform workspace new $WORKSPACE
-          fi
-        # Set the current workspace
-          terraform workspace select $WORKSPACE
+          REF=${{ github.event_name  == 'pull_request' && github.base_ref || github.ref }}
+          BRANCH=basename $REF
+          WORKSPACE_PREFIX="cars-workspace-branch-"
+          WORKSPACE="{$WORKSPACE_PREFIX}{$BRANCH}"
+          ENV=${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
+          INPUT'-input=false -var="ENV={$ENV}" -var="WORKSPACE_PREFIX={$WORKSPACE_PREFIX}" -var="AWS_REGION=${{ secrets.AWS_REGION }}"'
 
           echo "WORKSPACE=$WORKSPACE" >> "$GITHUB_OUTPUT"
+          echo "INPUT=$INPUT" >> "$GITHUB_OUTPUT"
+
+      # Select the workspace based on the branch name. If the workspace does
+      # not exist, create it.
+      - name: Terraform create and select workspace
+        id: select_and_create
+        run: |
+          if ! terraform workspace list | grep -q "^{{ steps.set_env.outputs.WORKSPACE }}$"; then
+            terraform workspace new {{ steps.set_env.outputs.WORKSPACE }}
+          fi
+          terraform workspace select {{ steps.set_env.outputs.WORKSPACE }}
 
       # Run the Terraform fmt command to check the Terraform code for formatting
       - name: Terraform Format
@@ -92,9 +92,9 @@ jobs:
         if: github.event_name == 'pull_request'
         # The -var-file option is used to pass the Terraform variables file
         # The -var option is used to pass the ENV variable
-        run: terraform plan -no-color -input=false -var="ENV=${{ steps.set_env.outputs.ENV }}"
+        run: terraform plan -no-color ${{ steps.set_env.outputs.INPUT }}
         # Continue the workflow even if the Terraform plan command fails, so that
-        # the Terraform plan can be viewed in the pull request. 
+        # the Terraform plan can be viewed in the pull request.
         # The workflow will be killed later
         continue-on-error: true
 
@@ -129,10 +129,10 @@ jobs:
               body: output
             })
 
-      # Fail the workflow if the Terraform plan step fails, this allows the pull 
+      # Fail the workflow if the Terraform plan step fails, this allows the pull
       # request message to be written before the workflow is killed
       - name: Terraform Plan Status
-        if: | 
+        if: |
           (github.event_name == 'pull_request' || github.event_name == 'push') 
           && steps.plan.outcome == 'failure'
         run: exit 1
@@ -140,11 +140,11 @@ jobs:
       # Run the Terraform apply command to apply the Terraform execution plan
       - name: Terraform Apply
         if: github.event_name == 'push'
-        run: terraform apply -auto-approve -input=false -var="ENV=${{ steps.set_env.outputs.ENV }}"
+        run: terraform apply -auto-approve ${{ steps.set_env.outputs.INPUT }}
 
       # Run the Terraform destroy command and delete workspace
       - name: Terraform destroy
         if: github.event_name == 'delete'
         run: |
-          terraform terraform apply -destroy -auto-approve -input=false -var="ENV=${{ steps.set_env.outputs.ENV }}"
-          terraform workspace delete {{ steps.set_workspace.outputs.WORKSPACE }}
+          terraform apply -destroy -auto-approve ${{ steps.set_env.outputs.INPUT }}
+          terraform workspace delete {{ steps.set_env.outputs.WORKSPACE }}

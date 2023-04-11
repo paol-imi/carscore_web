@@ -1,7 +1,11 @@
 provider "aws" {
-  region     = var.AWS_REGION
-  access_key = var.AWS_ACCESS_KEY
-  secret_key = var.AWS_SECRET_KEY
+  region = var.AWS_REGION
+  # Since we are using Terraform Cloud, the configuration lives in env variable
+  #assume_role {
+  #role_arn     = "arn:aws:iam::123456789012:role/ROLE_NAME"
+  #session_name = "SESSION_NAME"
+  #external_id  = "EXTERNAL_ID"
+  #}
 }
 
 terraform {
@@ -9,7 +13,7 @@ terraform {
   cloud {
     organization = "cars-org"
     workspaces {
-      name = "cars-workspace-*"
+      name = "${var.WORKSPACE_PREFIX}*"
     }
   }
 
@@ -18,10 +22,7 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 4.15.0"
     }
-    random = {
-      source = "hashicorp/random"
-    }
   }
 
-  required_version = "~> 1.2.0"
+  required_version = "~> 1.4.3"
 }

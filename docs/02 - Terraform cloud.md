@@ -1,7 +1,7 @@
 links:
 
 - [Teraform Github actions](https://developer.hashicorp.com/terraform/tutorials/automation/github-actions)
-- [AWS OIDC terraform](https://labinhood.com/blog/2023/02/terraform-cloud-and-aws-via-openid-connect-oidc/)
+- [AWS OIDC terraform](https://labinhood.com/blog/2023/02/terraform-cloud-and-aws-via-openid-connect-oidc/) and [Terraform docs OICD](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/dynamic-provider-credentials/aws-configuration)
 
 # Set up Terraform Cloud
 
