@@ -63,10 +63,10 @@ jobs:
       - name: Terraform create and select workspace
         id: select_and_create
         run: |
-          if ! terraform workspace list | grep -q "^{{ steps.set_env.outputs.WORKSPACE }}$"; then
-            terraform workspace new "{{ steps.set_env.outputs.WORKSPACE }}"
+          if ! terraform workspace list | grep -q "^${{ steps.set_env.outputs.WORKSPACE }}$"; then
+            terraform workspace new "${{ steps.set_env.outputs.WORKSPACE }}"
           fi
-          terraform workspace select "{{ steps.set_env.outputs.WORKSPACE }}"
+          terraform workspace select "${{ steps.set_env.outputs.WORKSPACE }}"
 
       # Run the Terraform fmt command to check the Terraform code for formatting
       - name: Terraform Format
@@ -147,4 +147,4 @@ jobs:
         if: github.event_name == 'delete'
         run: |
           terraform apply -destroy -auto-approve ${{ steps.set_env.outputs.INPUT }}
-          terraform workspace delete {{ steps.set_env.outputs.WORKSPACE }}
+          terraform workspace delete ${{ steps.set_env.outputs.WORKSPACE }}
