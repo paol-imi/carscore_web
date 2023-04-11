@@ -6,7 +6,7 @@ on:
   push:
     branches: [main, dev, "feature-**", "release-**", "hotfix-**"]
     paths: ["terraform/**", ".github/workflows/terraform.yml"]
-  pull_request: 
+  pull_request:
     branches: [main, dev, "feature-**", "release-**", "hotfix-**"]
     paths: ["terraform/**", ".github/workflows/terraform.yml"]
     # TODO: the "edited" tag will trigger the vent when base branch is changed (which is what we want),
@@ -72,7 +72,7 @@ jobs:
                 "type": "workspaces"
               }
             }' \
-            https://app.terraform.io/api/v2/organizations/my-organization/workspaces
+            https://app.terraform.io/api/v2/organizations/cars-org/workspaces
         continue-on-error: true
 
       # Run the Terraform fmt command to check the Terraform code for formatting
