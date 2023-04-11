@@ -48,7 +48,7 @@ jobs:
       - name: Set environment
         id: set_env
         run: |
-          REF=${{ github.event_name  == 'pull_request' && github.base_ref || github.ref }}
+          REF="${{ github.event_name  == 'pull_request' && github.base_ref || github.ref }}"
           BRANCH=basename $REF
           WORKSPACE_PREFIX="cars-workspace-branch-"
           WORKSPACE="{$WORKSPACE_PREFIX}{$BRANCH}"
