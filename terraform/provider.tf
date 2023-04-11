@@ -12,10 +12,6 @@ terraform {
 
   cloud {
     organization = "cars-org"
-
-    workspaces {
-      tags = []
-    }
   }
 
   required_providers {

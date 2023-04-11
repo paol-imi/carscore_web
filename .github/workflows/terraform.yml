@@ -58,6 +58,24 @@ jobs:
           echo "WORKSPACE=$WORKSPACE" >> "$GITHUB_OUTPUT"
           echo "INPUT=$INPUT" >> "$GITHUB_OUTPUT"
 
+          echo 'TF_WORKSPACE='$WORKSPACE >> $GITHUB_ENV
+
+      - name: Create workspace
+        run: |
+          curl \
+            --header "Authorization: Bearer ${{ secrets.TF_API_TOKEN }}" \
+            --header "Content-Type: application/vnd.api+json" \
+            --request POST \
+            --data '{
+              "data": {
+                "attributes": {
+                  "name": "${{ steps.set_env.outputs.WORKSPACE }}"
+                },
+                "type": "workspaces"
+              }
+            }' \
+            https://app.terraform.io/api/v2/organizations/my-organization/workspaces
+
       # Run the Terraform fmt command to check the Terraform code for formatting
       - name: Terraform Format
         id: fmt
@@ -68,14 +86,6 @@ jobs:
       - name: Terraform Init
         id: init
         run: terraform init
-
-      # Select the workspace based on the branch name. If the workspace does
-      # not exist, create it
-      - name: Terraform create and select workspace
-        id: select_and_create
-        run: |
-          # Select the workspace based on the branch name and create it if it does not exist
-          terraform workspace select "${{ steps.set_env.outputs.WORKSPACE }}"
 
       # Run the Terraform validate command to validate the Terraform code
       - name: Terraform Validate
