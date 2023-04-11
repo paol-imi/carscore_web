@@ -23,6 +23,9 @@ jobs:
     permissions:
       id-token: write # required to use OIDC authentication
       contents: read # required to checkout the code from the repo
+      deployments: write
+      actions: read
+      security-events: write
     steps:
       - uses: actions/checkout@v2
 
