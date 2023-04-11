@@ -64,16 +64,6 @@ jobs:
           echo "WORKSPACE=$WORKSPACE" >> "$GITHUB_OUTPUT"
           echo "INPUT=$INPUT" >> "$GITHUB_OUTPUT"
 
-      # Select the workspace based on the branch name. If the workspace does
-      # not exist, create it.
-      - name: Terraform create and select workspace
-        id: select_and_create
-        run: |
-          if ! terraform workspace list | grep -q "^${{ steps.set_env.outputs.WORKSPACE }}$"; then
-            terraform workspace new "${{ steps.set_env.outputs.WORKSPACE }}"
-          fi
-          terraform workspace select "${{ steps.set_env.outputs.WORKSPACE }}"
-
       # Run the Terraform fmt command to check the Terraform code for formatting
       - name: Terraform Format
         id: fmt
@@ -83,8 +73,17 @@ jobs:
       # Run the Terraform init command to initialize the Terraform working directory
       - name: Terraform Init
         id: init
-        if: github.event_name == 'pull_request' || github.event_name == 'push'
         run: terraform init
+
+      # Select the workspace based on the branch name. If the workspace does
+      # not exist, create it.
+      - name: Terraform create and select workspace
+        id: select_and_create
+        run: |
+          if ! terraform workspace list | grep -q "^${{ steps.set_env.outputs.WORKSPACE }}$"; then
+            terraform workspace new "${{ steps.set_env.outputs.WORKSPACE }}"
+          fi
+          terraform workspace select "${{ steps.set_env.outputs.WORKSPACE }}"
 
       # Run the Terraform validate command to validate the Terraform code
       - name: Terraform Validate
