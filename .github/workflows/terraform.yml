@@ -50,7 +50,7 @@ jobs:
         run: |
           REF="${{ github.event_name  == 'pull_request' && github.base_ref || github.ref }}"
           WORKSPACE="cars-workspace-branch-$(basename "$REF")"
-          INPUT='-input=false -var="ENV=${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}" -var="AWS_REGION=${{ secrets.AWS_REGION }}"'
+          INPUT='-input=false -var-file=".tfvars" -var="ENV=${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}" -var="AWS_REGION=${{ secrets.AWS_REGION }}"'
 
           echo "WORKSPACE=$WORKSPACE" >> "$GITHUB_OUTPUT"
           echo "INPUT=$INPUT" >> "$GITHUB_OUTPUT"
