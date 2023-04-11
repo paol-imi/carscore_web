@@ -58,7 +58,7 @@ jobs:
           echo "WORKSPACE=$WORKSPACE" >> "$GITHUB_OUTPUT"
           echo "INPUT=$INPUT" >> "$GITHUB_OUTPUT"
 
-          echo "::set-env name=TF_WORKSPACE::$WORKSPACE"
+          echo 'TF_WORKSPACE='$WORKSPACE >> $GITHUB_ENV
 
       # Run the Terraform fmt command to check the Terraform code for formatting
       - name: Terraform Format
