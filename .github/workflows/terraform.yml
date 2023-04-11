@@ -76,7 +76,7 @@ jobs:
       - name: Terraform create and select workspace
         id: select_and_create
         run: |
-          if ! terraform workspace list | grep -q "^${{ steps.set_env.outputs.WORKSPACE }}$"; then
+          if ! terraform workspace list | grep -q "${{ steps.set_env.outputs.WORKSPACE }}"; then
             terraform workspace new "${{ steps.set_env.outputs.WORKSPACE }}"
           fi
           terraform workspace select "${{ steps.set_env.outputs.WORKSPACE }}"
