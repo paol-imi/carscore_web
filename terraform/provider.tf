@@ -5,17 +5,23 @@ provider "aws" {
 }
 
 terraform {
+
+  cloud {
+    organization = "cars-org"
+    workspaces {
+      name = "cars-workspace-*"
+    }
+  }
+
   required_providers {
     aws = {
-      source = "hashicorp/aws"
+      source  = "hashicorp/aws"
+      version = "~> 4.15.0"
+    }
+    random = {
+      source = "hashicorp/random"
     }
   }
 
-  backend "remote" {
-    organization = "GH"
-
-    workspaces {
-      name = "Terraform-AWS-ECS-Production"
-    }
-  }
+  required_version = "~> 1.2.0"
 }

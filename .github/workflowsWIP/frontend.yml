@@ -41,9 +41,9 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          role-to-assume: arn:aws:iam::513968370036:role/GithubWebIdentity
+          role-to-assume: ${{ secrets.AWS_GITHUB_ROLE }}
           role-duration-seconds: 900 # the ttl of the session, in seconds.
-          aws-region: us-east-1
+          aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Build React App
         run: |

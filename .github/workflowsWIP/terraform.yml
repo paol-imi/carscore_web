@@ -4,15 +4,17 @@ on:
   # Trigger the workflow on push or pull request, for the main, dev and feature
   # branches. Only run the workflow if the terraform directory has changed
   push:
-    branches: [main]
+    branches: [main,dev,'feature-**','release-**','hotfix-**']
     paths: ["terraform/**"]
   pull_request:
-    branches: [main]
+    branches: [main,dev,'feature-**','release-**','hotfix-**']
     paths: ["terraform/**"]
     # TODO: the "edited" tag will trigger the vent when base branch is changed (which is what we want),
     #      but it will also trigger when the PR is edited (which we don't want).
     #      We leave this edge case open, to avoid having the workflow re-run for each small text changes of the PR.
     types: [opened, synchronize, reopened]
+  delete:
+    branches: [main,dev,'feature-**','release-**','hotfix-**']
 
 # The aws group ensures that only one workflow at a time can modify the AWS 
 # infrastructure
@@ -50,7 +52,6 @@ jobs:
       # Select the workspace based on the branch name. If the workspace does 
       # not exist, create it.
       - name: Terraform set workspace
-        id: set_workspace
         run: |
           if [[ ${{ github.event_name }} == 'push' ]]; then
             BRANCH=$(basename ${{ github.ref }})
@@ -66,7 +67,23 @@ jobs:
         # Set the current workspace
           terraform workspace select $WORKSPACE
 
-          echo "WORKSPACE=$WORKSPACE" >> "$GITHUB_OUTPUT"
+      # Select the workspace based on the branch name. If the workspace does 
+      # not exist, create it.
+      - name: Terraform set workspace
+        run: |
+          if [[ ${{ github.event_name }} == 'push' ]]; then
+            BRANCH=$(basename ${{ github.ref }})
+          elif [[ ${{ github.event_name }} == 'pull_request' ]]; then
+            BRANCH=$(basename ${{ github.base_ref }})
+          fi
+
+          WORKSPACE="cars-workspace-branch-$BRANCH"
+
+          if ! terraform workspace list | grep -q "^$WORKSPACE$"; then
+            terraform workspace new $WORKSPACE
+          fi
+        # Set the current workspace
+          terraform workspace select $WORKSPACE
 
       # Run the Terraform fmt command to check the Terraform code for formatting
       - name: Terraform Format
@@ -147,4 +164,4 @@ jobs:
         if: github.event_name == 'delete'
         run: |
           terraform terraform apply -destroy -auto-approve -input=false -var="ENV=${{ steps.set_env.outputs.ENV }}"
-          terraform workspace delete {{ steps.set_workspace.outputs.WORKSPACE }}
+          terraform workspace delete $WORKSPACE
