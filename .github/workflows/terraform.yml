@@ -72,7 +72,7 @@ jobs:
         run: terraform init
 
       # Select the workspace based on the branch name. If the workspace does
-      # not exist, create it.
+      # not exist, create it
       - name: Terraform create and select workspace
         id: select_and_create
         run: |
