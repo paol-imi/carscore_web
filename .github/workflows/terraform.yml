@@ -49,14 +49,12 @@ jobs:
         id: set_env
         run: |
           REF="${{ github.event_name  == 'pull_request' && github.base_ref || github.ref }}"
-          BRANCH=$(basename "$REF")
-          WORKSPACE_PREFIX="cars-workspace-branch-"
-          WORKSPACE="$WORKSPACE_PREFIX$BRANCH"
-          ENV="${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}"
-          INPUT='-input=false -var="ENV=$ENV" -var="WORKSPACE_PREFIX=$WORKSPACE_PREFIX" -var="AWS_REGION=${{ secrets.AWS_REGION }}"'
+          WORKSPACE="cars-workspace-branch-$(basename "$REF")"
+          INPUT='-input=false -var="ENV=${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}" -var="AWS_REGION=${{ secrets.AWS_REGION }}"'
 
           echo "WORKSPACE=$WORKSPACE" >> "$GITHUB_OUTPUT"
           echo "INPUT=$INPUT" >> "$GITHUB_OUTPUT"
+          echo "ENV=$ENV" >> "$GITHUB_OUTPUT"
 
           echo 'TF_WORKSPACE='$WORKSPACE >> $GITHUB_ENV
 
@@ -75,6 +73,7 @@ jobs:
               }
             }' \
             https://app.terraform.io/api/v2/organizations/my-organization/workspaces
+        continue-on-error: true
 
       # Run the Terraform fmt command to check the Terraform code for formatting
       - name: Terraform Format
