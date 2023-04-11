@@ -1,0 +1,64 @@
+name: "Deploy to Production"
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "frontend/**"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "frontend/**"
+
+concurrency: aws-${{ github.ref }}
+
+jobs:
+  build:
+    name: "Build frontend"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: frontend
+    permissions:
+      id-token: write # required to use OIDC authentication
+      contents: read # required to checkout the code from the repo
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          cli_config_credentials_token: ${{ secrets.TF_API_KEY }}
+          terraform_wrapper: false
+
+      - name: Terraform Output
+        id: terraform-output
+        run: terraform output -json
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ secrets.AWS_GITHUB_ROLE }}
+          role-duration-seconds: 900 # the ttl of the session, in seconds.
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Build React App
+        run: |
+          npm ci
+          npm run build
+
+      - name: Publish to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: YOUR_ACCOUNT_ID
+          projectName: YOUR_PROJECT_NAME
+          directory: YOUR_ASSET_DIRECTORY
+          # Optional: Enable this if you want to have GitHub Deployments triggered
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy app build to S3 bucket
+        run: aws s3 sync ./dist/ s3://cars-frontend-bucket --delete
