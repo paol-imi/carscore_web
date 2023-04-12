@@ -51,7 +51,7 @@ jobs:
           WORKSPACE="cars-workspace-branch-$(basename "$REF")"
           INPUT='-input=false -var-file=".tfvars" -var="ENV=${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}" -var="AWS_REGION=${{ secrets.AWS_REGION }}"'
 
-          echo "MAIN_WORKSPACE=$MAIN_WORKSPACE" >> "$GITHUB_OUTPUT
+          echo "MAIN_WORKSPACE=$MAIN_WORKSPACE" >> "$GITHUB_OUTPUT"
           echo "WORKSPACE=$WORKSPACE" >> "$GITHUB_OUTPUT"
           echo "INPUT=$INPUT" >> "$GITHUB_OUTPUT"
           echo "ENV=$ENV" >> "$GITHUB_OUTPUT"
