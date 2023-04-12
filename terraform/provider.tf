@@ -2,7 +2,7 @@ provider "aws" {
   region = var.AWS_REGION
   # Since we are using Terraform Cloud, the configuration lives in env variable
   assume_role {
-    role_arn     = var.AWS_ARN
+    role_arn     = "arn:aws:iam::513968370036:role/TerraformCloudWebIdentity"
     session_name = "SESSION_NAME"
   }
 }
