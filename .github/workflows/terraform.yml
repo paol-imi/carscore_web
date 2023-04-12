@@ -153,4 +153,4 @@ jobs:
         if: github.event_name == 'delete'
         run: |
           terraform apply -destroy -auto-approve ${{ steps.set_env.outputs.INPUT }}
-          terraform workspace delete ${{ steps.set_env.outputs.WORKSPACE }}
+          terraform workspace delete ${{ github.event.ref }}
