@@ -4,7 +4,7 @@ on:
   # Trigger the workflow on push or pull request, for the main, dev and feature
   # branches. Only run the workflow if the terraform directory has changed
   push:
-    branches: [main, dev, "feature-**", "release-**", "hotfix-**"]
+    branches: [main, dev]
     paths: ["terraform/**", ".github/workflows/terraform.yml"]
   pull_request:
     branches: [main, dev, "feature-**", "release-**", "hotfix-**"]
@@ -12,9 +12,7 @@ on:
     # TODO: the "edited" tag will trigger the vent when base branch is changed (which is what we want),
     #      but it will also trigger when the PR is edited (which we don't want).
     #      We leave this edge case open, to avoid having the workflow re-run for each small text changes of the PR.
-    types: [opened, synchronize, reopened]
-  delete:
-    branches: [main, dev, "feature-**", "release-**", "hotfix-**"]
+    types: [opened, synchronize, reopened, closed]
 
 # The aws group ensures that only one workflow at a time can modify the AWS
 # infrastructure
@@ -49,9 +47,11 @@ jobs:
         id: set_env
         run: |
           REF="${{ github.event_name  == 'pull_request' && github.base_ref || github.ref }}"
+          MAIN_WORKSPACE="cars-workspace-branch-main"
           WORKSPACE="cars-workspace-branch-$(basename "$REF")"
           INPUT='-input=false -var-file=".tfvars" -var="ENV=${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}" -var="AWS_REGION=${{ secrets.AWS_REGION }}"'
 
+          echo "MAIN_WORKSPACE=$MAIN_WORKSPACE" >> "$GITHUB_OUTPUT"
           echo "WORKSPACE=$WORKSPACE" >> "$GITHUB_OUTPUT"
           echo "INPUT=$INPUT" >> "$GITHUB_OUTPUT"
           echo "ENV=$ENV" >> "$GITHUB_OUTPUT"
@@ -59,6 +59,7 @@ jobs:
           echo 'TF_WORKSPACE='$WORKSPACE >> $GITHUB_ENV
 
       - name: Create workspace
+        if: github.event_name != 'pull_request' || github.event.action != 'closed'
         run: |
           curl \
             --header "Authorization: Bearer ${{ secrets.TF_API_TOKEN }}" \
@@ -78,7 +79,7 @@ jobs:
       # Run the Terraform fmt command to check the Terraform code for formatting
       - name: Terraform Format
         id: fmt
-        if: github.event_name == 'pull_request' || github.event_name == 'push'
+        if: github.event_name != 'pull_request' || github.event.action != 'closed'
         run: terraform fmt -check
 
       # Run the Terraform init command to initialize the Terraform working directory
@@ -89,13 +90,13 @@ jobs:
       # Run the Terraform validate command to validate the Terraform code
       - name: Terraform Validate
         id: validate
-        if: github.event_name == 'pull_request' || github.event_name == 'push'
+        if: github.event_name != 'pull_request' || github.event.action != 'closed'
         run: terraform validate -no-color
 
       # Run the Terraform plan command to generate a Terraform execution plan
       - name: Terraform Plan
         id: plan
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && github.event.action != 'closed'
         # The -var-file option is used to pass the Terraform variables file
         # The -var option is used to pass the ENV variable
         run: terraform plan -no-color ${{ steps.set_env.outputs.INPUT }}
@@ -107,7 +108,7 @@ jobs:
       # Create a comment on the pull request with the Terraform plan
       - name: Update Pull Request
         uses: actions/github-script@v6
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && github.event.action != 'closed'
         env:
           PLAN: ${{ steps.plan.outputs.stdout }}
         with:
@@ -138,19 +139,18 @@ jobs:
       # Fail the workflow if the Terraform plan step fails, this allows the pull
       # request message to be written before the workflow is killed
       - name: Terraform Plan Status
-        if: |
-          (github.event_name == 'pull_request' || github.event_name == 'push') 
-          && steps.plan.outcome == 'failure'
+        if: (github.event_name != 'pull_request' || github.event.action != 'closed') && steps.plan.outcome == 'failure'
         run: exit 1
 
       # Run the Terraform apply command to apply the Terraform execution plan
       - name: Terraform Apply
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && github.event.action != 'closed'
         run: terraform apply -auto-approve ${{ steps.set_env.outputs.INPUT }}
 
-      # Run the Terraform destroy command and delete workspace
-      - name: Terraform destroy
-        if: github.event_name == 'delete'
+      # Run the Terraform destroy command to destroy the Terraform execution plan
+      - name: Terraform Destroy
+        if: github.event_name == 'pull_request' && github.event.action == 'closed'
         run: |
-          terraform apply -destroy -auto-approve ${{ steps.set_env.outputs.INPUT }}
+          terraform destroy -auto-approve ${{ steps.set_env.outputs.INPUT }}
+          terraform workspace select ${{ steps.set_env.outputs.MAIN_WORKSPACE }}
           terraform workspace delete ${{ steps.set_env.outputs.WORKSPACE }}

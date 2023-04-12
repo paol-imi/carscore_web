@@ -5,6 +5,8 @@ links:
 
 # Set up Terraform Cloud
 
+## Create an Org on terrafor cloud
+
 ## Create workspace on Terraform cloud
 
 The GitHub Action you create will connect to Terraform Cloud to plan and apply your configuration. Before we set up the Actions workflow, you must create a workspace, add your AWS service credentials to your Terraform Cloud workspace, and generate a user API token.
@@ -75,3 +77,5 @@ Save this token in a safe place. You will add it to GitHub later as a secret, so
 In your new repository, navigate to the Settings page. Open the Secrets and variables menu, then select Actions.
 
 ![](./images/github-repository-secrets.png)
+
+secret.TF_API_TOKEN
