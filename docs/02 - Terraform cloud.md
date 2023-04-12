@@ -5,7 +5,7 @@ links:
 
 # Set up Terraform Cloud
 
-## Create an Org on terrafor cloud
+## Create an Organization on terraform cloud
 
 ## Create workspace on Terraform cloud
 

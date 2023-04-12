@@ -1,5 +1,9 @@
 name: "Deploy frontend"
 
+# On push, deploy the frontend to main, dev, feature, release, or hotfix
+# branches, each branch will have its own deploy. We manually remove the old
+# ones since Cloudflare pages does not expose any first order API. On Delete,
+# remove all deploys related to the deleted branch.
 on:
   push:
     branches: [main, dev, "feature-**", "release-**", "hotfix-**"]
@@ -7,9 +11,9 @@ on:
   delete:
     branches: [main, dev, "feature-**", "release-**", "hotfix-**"]
 
-# The aws group ensures that only one workflow at a time can modify the AWS
-# infrastructure
-concurrency: aws-${{ github.ref }}
+# The cloudflare groups ensure that only one workflow per branch can deploy to
+# Cloudflare pages at a time
+concurrency: cloudflare-${{ github.ref }}
 
 jobs:
   build:
@@ -20,14 +24,17 @@ jobs:
         shell: bash
         working-directory: frontend
     permissions:
-      id-token: write # required to use OIDC authentication
-      contents: read # required to checkout the code from the repo
+      # required to use OIDC authentication
+      id-token: write
+      # required to checkout the code from the repo
+      contents: read
+      # Required to deploy to Cloudflare Pages
       deployments: write
       actions: read
-      security-events: write
     steps:
       - uses: actions/checkout@v2
 
+      # Build and test the frontend
       - name: Build React App
         if: github.event_name == 'push'
         run: |
@@ -35,6 +42,7 @@ jobs:
           npm run test
           npm run build
 
+      # Deploy to Cloudflare Pages
       - name: Publish to Cloudflare Pages
         uses: cloudflare/pages-action@v1
         if: github.event_name == 'push'
@@ -46,6 +54,7 @@ jobs:
           # Optional: Enable this if you want to have GitHub Deployments triggered
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
 
+      # Cleanup old deployments
       - name: Cleanup old deployments
         run: |
 
@@ -55,18 +64,17 @@ jobs:
             --header "Content-Type: application/json" \
             --header 'Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}')
 
-          # Parse the response to get the latest deployment on the 'main' branch
-          # Then map only the id for each element of the list
+          # Parse the response to get the latest deployment on the current branch
           latest_deployments=$(echo "$response" | jq '.result[] | select(.deployment_trigger.metadata.branch == "main") | .id ')
 
-          IFS= read -r first_line <<<latest_deployments
-
+          # If the event is a push, we want to keep the last deployment
           is_first_line=${{ github.event_name == 'push' && true || false}}
           while IFS= read -r latest_deployments; do
             if $is_first_line; then
               is_first_line=false
             else
-              delete_response=$(curl --verbose --request DELETE \
+              # Delete the deployment
+              delete_response=$(curl --silent --request DELETE \
                 --url "https://api.cloudflare.com/client/v4/accounts/${{ secrets.CLOUDFLARE_ACCOUNT_ID }}/pages/projects/${{ vars.CLOUDFLARE_PROJECT_NAME }}/deployments/${latest_deployments//\"/}" \
                 --header "Content-Type: application/json" \
                 --header 'Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}')

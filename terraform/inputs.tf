@@ -13,6 +13,3 @@ variable "ENV" {
   }
 }
 
-variable "TEST" {
-  type = string
-}

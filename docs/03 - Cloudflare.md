@@ -2,6 +2,14 @@ links
 
 - [Cloudflare docs](https://developers.cloudflare.com/pages/how-to/use-direct-upload-with-continuous-integration/)
 
+# Create a cloudflare account
+
+## Register a domain
+
+## Create a pages Project and add name as repo variable on github
+
+`CLOUDFLARE_PROJECT_NAME`
+
 # Get credentials from Cloudflare
 
 ​​Generate an API Token
