@@ -139,8 +139,7 @@ jobs:
       # Fail the workflow if the Terraform plan step fails, this allows the pull
       # request message to be written before the workflow is killed
       - name: Terraform Plan Status
-        if: github.event_name != 'pull_request' || github.event.action != 'closed'
-        if: steps.plan.outcome == 'failure'
+        if: (github.event_name != 'pull_request' || github.event.action != 'closed') && steps.plan.outcome == 'failure'
         run: exit 1
 
       # Run the Terraform apply command to apply the Terraform execution plan
