@@ -2,8 +2,10 @@ name: "Deploy frontend"
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev, "feature-**", "release-**", "hotfix-**"]
     paths: ["frontend/**", ".github/workflows/frontend.yml"]
+  delete:
+    branches: [main, dev, "feature-**", "release-**", "hotfix-**"]
 
 # The aws group ensures that only one workflow at a time can modify the AWS
 # infrastructure
@@ -26,27 +28,50 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v1
-        with:
-          cli_config_credentials_token: ${{ secrets.TF_API_KEY }}
-          terraform_wrapper: false
-
-      - name: Terraform Output
-        id: terraform-output
-        run: terraform output -json
-
       - name: Build React App
+        if: github.event_name == 'push'
         run: |
           npm ci
+          npm run test
           npm run build
 
       - name: Publish to Cloudflare Pages
         uses: cloudflare/pages-action@v1
+        if: github.event_name == 'push'
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: cars-frontend
+          projectName: ${{ vars.CLOUDFLARE_PROJECT_NAME }}
           directory: ./frontend/dist
           # Optional: Enable this if you want to have GitHub Deployments triggered
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cleanup old deployments
+        run: |
+
+          # Get all deployments
+          response=$(curl --silent --request GET \
+            --url "https://api.cloudflare.com/client/v4/accounts/${{ secrets.CLOUDFLARE_ACCOUNT_ID }}/pages/projects/${{ vars.CLOUDFLARE_PROJECT_NAME }}/deployments" \
+            --header "Content-Type: application/json" \
+            --header 'Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}')
+
+          # Parse the response to get the latest deployment on the 'main' branch
+          # Then map only the id for each element of the list
+          latest_deployments=$(echo "$response" | jq '.result[] | select(.deployment_trigger.metadata.branch == "main") | .id ')
+
+          IFS= read -r first_line <<<latest_deployments
+
+          is_first_line=${{ github.event_name == 'push' && true || false}}
+          while IFS= read -r latest_deployments; do
+            if $is_first_line; then
+              is_first_line=false
+            else
+              delete_response=$(curl --verbose --request DELETE \
+                --url "https://api.cloudflare.com/client/v4/accounts/${{ secrets.CLOUDFLARE_ACCOUNT_ID }}/pages/projects/${{ vars.CLOUDFLARE_PROJECT_NAME }}/deployments/${latest_deployments//\"/}" \
+                --header "Content-Type: application/json" \
+                --header 'Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}')
+
+              echo "$delete_response"
+            fi
+
+          done <<<"$latest_deployments"
