@@ -1,6 +1,6 @@
 variable "AWS_REGION" {
   type        = string
-  description = "AWS region in which deploy the service."
+  description = "AWS region in which deploy the resources."
 }
 
 variable "ENV" {

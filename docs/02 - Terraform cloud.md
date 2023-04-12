@@ -46,7 +46,7 @@ To create the required role and associated trust policy:
   - Finally, provided a meaningful name for your new role, and click “Create role”.
   - Once the new role has been created, copy its ARN so it can be entered on the Terraform Cloud side.
 
-> \*\*FIXME: for simplicity I'll put admin permission to start since it's hard to predict terraform needs. We will follow least-privilege principles by monitoring terraform need trough AWS and then apply those minimal policies.
+> FIXME: for simplicity I'll put admin permission to start since it's hard to predict terraform needs. We will follow least-privilege principles by monitoring terraform needs trough AWS and then apply those minimal policies. Removing policies is way faster than trial and error.
 
 ![](./images/iam-role-2-web-identity.avif)
 
@@ -74,8 +74,6 @@ Save this token in a safe place. You will add it to GitHub later as a secret, so
 
 ## Set up te Github repository
 
-In your new repository, navigate to the Settings page. Open the Secrets and variables menu, then select Actions.
+Save the token as a secret called `TF_API_TOKEN`
 
 ![](./images/github-repository-secrets.png)
-
-secret.TF_API_TOKEN

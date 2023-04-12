@@ -1,5 +1,7 @@
 name: "Deploy frontend"
 
+# TODO: Find a way to make preview link accessible (like in pull_requests messages)
+
 # On push, deploy the frontend to main, dev, feature, release, or hotfix
 # branches, each branch will have its own deploy. We manually remove the old
 # ones since Cloudflare pages does not expose any first order API. On Delete,
@@ -22,6 +24,7 @@ jobs:
     defaults:
       run:
         shell: bash
+        # Set the working directory to the frontend directory
         working-directory: frontend
     permissions:
       # required to use OIDC authentication

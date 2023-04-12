@@ -1,8 +1,8 @@
-# TODO:
+TODO:
 
-- branch protect:[link](https://docs.github.com/en/enterprise/2.16/admin/developer-workflow/configuring-protected-branches-and-required-status-checks)
+- [Protect branches](https://docs.github.com/en/enterprise/2.16/admin/developer-workflow/configuring-protected-branches-and-required-status-checks)
 
-links
+Links
 
 - [Github role](https://benoitboure.com/securely-access-your-aws-resources-from-github-actions)
 
@@ -34,9 +34,7 @@ You now need to create a role that Github will be able to assume in order to acc
 
 ### Permission policies
 
-You now need to give the role the appropriate permissions (Policies). These are the ones that Github needs in order to do whatever it has to do. This will vary based on your use case, so I will leave that up to you. Keep in mind that you should stick to the principle of least privileges.
-
-When that is done, give your role a name and click Create Role.
+> FIXME: for simplicity I'll put admin permission to start since it's hard to predict terraform needs. We will follow least-privilege principles by monitoring terraform needs trough AWS and then apply those minimal policies. Removing policies is way faster than trial and error.
 
 There is now an additional step to do. You need to edit the trust policy of the role to reduce its scope to your repository only. Make sure you don't skip this part, it is very important. Without that, any repository on GitHub will be able to assume your role and access your resources. (Unfortunately, there does not seem to be a way to do that at creation time).
 
@@ -77,6 +75,10 @@ The final result will look like this:
 
 This concludes the required configurations on your AWS account. Take note of the role ARN, you'll need it later.
 
+## Set the Github secrets
+
+set the role arn in the secret `AWS_GITHUB_ROLE`, and the region to use `AWS_REGION`
+
 ### Configure Github action workflow
 
 Your Github workflow requires additional permissions in order to be able to use OIDC. Add the following at the top of your workflow's YML file. You can also add it at the job level to reduce the scope if needed.
@@ -85,22 +87,17 @@ Your Github workflow requires additional permissions in order to be able to use 
 permissions:
   id-token: write # required to use OIDC authentication
   contents: read # required to checkout the code from the repo
-You can now use the configure-aws-credentials Github action in the job that needs to assume the role. Add this step to generate credentials before doing any call to AWS:
 ```
+
+You can now use the configure-aws-credentials Github action in the job that needs to assume the role. Add this step to generate credentials before doing any call to AWS:
 
 ```yaml
 - name: configure aws credentials
   uses: aws-actions/configure-aws-credentials@v1
   with:
-    role-to-assume: arn:aws:iam::1234567890:role/your-role-arn
+    role-to-assume: ${{ secrets.AWS_GITHUB_ROLE }}
     role-duration-seconds: 900 # the ttl of the session, in seconds.
-    aws-region: us-east-1 # use your region here.
-
-# You can now execute commands that use the credentials👇
-- name: Serverless deploy
-  run: sls deploy --stage dev
+    aws-region: ${{ secrets.AWS_REGION }}# use your region here.
 ```
 
 The configure AWS credentials step will use the OIDC integration to assume the given role, generate short-lived credentials, and make them available to the current job.
-
-💡 If you want to take security even further, you can also keep your role's ARN used in role-to-assume in a Github secret.
