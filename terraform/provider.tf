@@ -1,8 +1,11 @@
 provider "aws" {
-  region     = var.AWS_REGION
-  access_key = var.AWS_ACCESS_KEY_ID
-  secret_key = var.AWS_SECRET_ACCESS_KEY
+  region = var.AWS_REGION
+  #access_key = var.AWS_ACCESS_KEY_ID
+  #secret_key = var.AWS_SECRET_ACCESS_KEY
   # Since we are using Terraform Cloud, the configuration lives in env variable
+  assume_role {
+    role_arn = var.AWS_ROLE_ARN
+  }
 }
 
 terraform {
