@@ -12,8 +12,3 @@ variable "ENV" {
     error_message = "The ENV variable must be 'prod' or 'dev'."
   }
 }
-
-variable "AWS_ARN" {
-  type        = string
-  description = "AWS ARN to use for the assume role."
-}
