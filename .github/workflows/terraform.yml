@@ -145,7 +145,7 @@ jobs:
 
       # Run the Terraform apply command to apply the Terraform execution plan
       - name: Terraform Apply
-        if: github.event_name == 'push' && github.event.action != 'closed'
+        if: github.event_name == 'push'
         run: terraform apply -auto-approve ${{ steps.set_env.outputs.INPUT }}
 
       # Run the Terraform destroy command to destroy the Terraform execution plan
