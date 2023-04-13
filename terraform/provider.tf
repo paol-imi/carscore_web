@@ -8,7 +8,7 @@ provider "aws" {
 terraform {
 
   backend "remote" {
-    organization = "cars-org"
+    organization = "cars-org-2"
   }
 
   required_providers {
