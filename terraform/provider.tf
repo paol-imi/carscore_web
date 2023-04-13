@@ -1,11 +1,8 @@
 provider "aws" {
-  region = var.AWS_REGION
+  region     = var.AWS_REGION
+  access_key = var.AWS_ACCESS_KEY_ID
+  secret_key = var.AWS_SECRET_ACCESS_KEY
   # Since we are using Terraform Cloud, the configuration lives in env variable
-  #assume_role {
-  #role_arn = "arn:aws:iam::513968370036:role/TerraformCloudRole"
-  #   session_name = "SESSION_NAME"
-  #   external_id  = "EXTERNAL_ID"
-  #}
 }
 
 terraform {
@@ -29,5 +26,5 @@ terraform {
     }
   }
 
-  required_version = "~> 1.4.5"
+  required_version = "~> 1.4.4"
 }
