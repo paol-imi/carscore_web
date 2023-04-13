@@ -7,7 +7,7 @@ provider "aws" {
 
 terraform {
 
-  backend "remote" {
+  backend "cloud" {
     organization = "cars-org-2"
   }
 
