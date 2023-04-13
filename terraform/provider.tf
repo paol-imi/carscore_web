@@ -7,8 +7,8 @@ provider "aws" {
 
 terraform {
 
-  backend "cloud" {
-    organization = "cars-org-2"
+  cloud {
+    organization = "cars-org"
   }
 
   required_providers {
