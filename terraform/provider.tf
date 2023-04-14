@@ -11,7 +11,7 @@ provider "aws" {
 terraform {
 
   cloud {
-    organization = "cars-org"
+    organization = "cars-organization"
   }
 
   required_providers {

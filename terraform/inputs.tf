@@ -24,3 +24,7 @@ variable "AWS_SECRET_ACCESS_KEY" {
 variable "AWS_ROLE_ARN" {
   type = string
 }
+
+variable "TF_ORGANIZATION_NAME" {
+  type = string
+}
