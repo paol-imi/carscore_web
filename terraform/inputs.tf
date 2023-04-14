@@ -12,7 +12,7 @@ variable "ENV" {
     error_message = "The ENV variable must be 'prod' or 'dev'."
   }
 }
-/*
+
 variable "AWS_ACCESS_KEY_ID" {
   type = string
 }
@@ -20,7 +20,6 @@ variable "AWS_ACCESS_KEY_ID" {
 variable "AWS_SECRET_ACCESS_KEY" {
   type = string
 }
-*/
 
 variable "AWS_ROLE_ARN" {
   type = string

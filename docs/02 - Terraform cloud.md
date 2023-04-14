@@ -8,6 +8,7 @@ TODO:
 - Terraform cloud with organization called terraform-organization
 - cars-terraform-branch-main must be present (look at -github/workflows/terraform)
 - Variable-set for all workspaces
+- Solve role arn
 
 # Set up Terraform Cloud
 
