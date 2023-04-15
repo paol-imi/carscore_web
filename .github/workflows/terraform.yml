@@ -129,7 +129,7 @@ jobs:
             --data '{
               "data": {
                 "attributes": {
-                  "name": "${{ env.WORKSPACE }}"
+                  "name": "${{ steps.set_env.outputs.WORKSPACE }}"
                 },
                 "type": "workspaces"
               }
@@ -154,7 +154,7 @@ jobs:
         if: github.event_name == 'pull_request' && github.event.action != 'closed'
         # The -var-file option is used to pass the Terraform variables file
         # The -var option is used to pass the ENV variable
-        run: terraform plan -no-color ${{ env.INPUT }}
+        run: terraform plan -no-color ${{ steps.set_env.outputs.INPUT }}
         # Continue the workflow even if the Terraform plan command fails, so that
         # the Terraform plan can be viewed in the pull request.
         # The workflow will be killed later
@@ -222,12 +222,12 @@ jobs:
       # Run the Terraform apply command to apply the Terraform execution plan
       - name: Terraform Apply
         if: github.event.action != 'closed'
-        run: terraform apply -auto-approve ${{ env.INPUT }}
+        run: terraform apply -auto-approve ${{ steps.set_env.outputs.INPUT }}
 
       # Run the Terraform destroy command to destroy the Terraform execution plan
       - name: Terraform Destroy
         if: github.event_name == 'pull_request' && github.event.action == 'closed'
         run: |
-          terraform destroy -auto-approve ${{ env.INPUT }}
-          terraform workspace select ${{ env.MAIN_WORKSPACE }}
-          terraform workspace delete ${{ env.WORKSPACE }}
+          terraform destroy -auto-approve ${{ steps.set_env.outputs.INPUT }}
+          terraform workspace select ${{ steps.set_env.outputs.MAIN_WORKSPACE }}
+          terraform workspace delete ${{ steps.set_env.outputs.WORKSPACE }}
