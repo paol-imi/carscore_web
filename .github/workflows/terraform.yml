@@ -66,14 +66,6 @@ on:
 env:
   ### Secrets to be defined in the github workspace
   TF_API_TOKEN: ${{ secrets.TF_API_TOKEN }}
-  ### Global env variables
-  REF: ${{ github.event_name == 'pull_request' && github.base_ref || github.ref }}"
-  BRANCH: ${{ basename(env.REF) }}
-  MAIN_WORKSPACE: cars-workspace-branch-main
-  WORKSPACE: cars-workspace-branch-${{ env.BRANCH }} # ${{ env.BRANCH == 'main' && "prod" || 'dev' }}
-  INPUT: '-input=false -var-file=".tfvars" -var="BRANCH=${{ env.BRANCH }}" -var="AWS_REGION=${{ secrets.AWS_REGION }}"'
-  ### Variables needed to select the Terraform Cloud workspace to use
-  TF_WORKSPACE: ${{ env.WORKSPACE }}
 
 # The aws group ensures that only one workflow at a time can modify the AWS
 # infrastructure (even if Terraform cloud is already handling concurrent jobs).
@@ -109,6 +101,22 @@ jobs:
         id: fmt
         if: ! (github.event_name == 'pull_request' && github.event.action == 'closed')
         run: terraform fmt -check
+
+      # Set the ENV variable based on the branch name
+      # WORKSPACE="cars-workspace-branch-${{ github.ref == 'refs/heads/main' && 'main' || dev }}"
+      - name: Set environment
+        id: set_env
+        run: |
+          REF="${{ github.event_name == 'pull_request' && github.base_ref || github.ref }}"
+          BRANCH=$(basename "$REF")
+          MAIN_WORKSPACE="cars-workspace-branch-main"
+          WORKSPACE="cars-workspace-branch-$BRANCH"
+          INPUT='-input=false -var-file=".tfvars" -var="BRANCH=$(echo $BRANCH)" -var="AWS_REGION=${{ secrets.AWS_REGION }}"'
+
+          echo "WORKSPACE=$WORKSPACE" >> "$GITHUB_OUTPUT"
+          echo "INPUT=$INPUT" >> "$GITHUB_OUTPUT"
+
+          echo 'TF_WORKSPACE='$WORKSPACE >> $GITHUB_ENV
 
       # Create the workspace if it does not exist
       - name: Create workspace
