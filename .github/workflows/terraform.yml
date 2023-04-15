@@ -99,7 +99,7 @@ jobs:
       # Run the Terraform fmt command to check the Terraform code for formatting
       - name: Terraform Format
         id: fmt
-        if: ! (github.event_name == 'pull_request' && github.event.action == 'closed')
+        if: !(github.event_name == 'pull_request' && github.event.action == 'closed')
         run: terraform fmt -check
 
       # Set the ENV variable based on the branch name
@@ -120,7 +120,7 @@ jobs:
 
       # Create the workspace if it does not exist
       - name: Create workspace
-        if: ! (github.event_name == 'pull_request' && github.event.action == 'closed')
+        if: !(github.event_name == 'pull_request' && github.event.action == 'closed')
         run: |
           curl \
             --header "Authorization: Bearer ${{ env.TF_API_TOKEN }}" \
@@ -145,7 +145,7 @@ jobs:
       # Run the Terraform validate command to validate the Terraform code
       - name: Terraform Validate
         id: validate
-        if: ! (github.event_name == 'pull_request' && github.event.action == 'closed')
+        if: !(github.event_name == 'pull_request' && github.event.action == 'closed')
         run: terraform validate -no-color
 
       # Run the Terraform plan command to generate a Terraform execution plan
@@ -221,7 +221,7 @@ jobs:
 
       # Run the Terraform apply command to apply the Terraform execution plan
       - name: Terraform Apply
-        if: ! (github.event_name == 'pull_request' && github.event.action == 'closed')
+        if: !(github.event_name == 'pull_request' && github.event.action == 'closed')
         run: terraform apply -auto-approve ${{ env.INPUT }}
 
       # Run the Terraform destroy command to destroy the Terraform execution plan
