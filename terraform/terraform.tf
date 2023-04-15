@@ -1,8 +1,11 @@
 provider "aws" {
-  region     = var.AWS_REGION
+  region = var.AWS_REGION
+
+  # FIXME: Terraform has problems in athenticating with OIDC in AWS
+  # issue: https://github.com/hashicorp/terraform-provider-aws/issues/23110
+  # For now we use the access key and secret key
   access_key = var.AWS_ACCESS_KEY_ID
   secret_key = var.AWS_SECRET_ACCESS_KEY
-
   # assume_role {
   #  role_arn = var.AWS_ROLE_ARN
   # }

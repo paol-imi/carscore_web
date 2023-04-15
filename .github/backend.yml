@@ -1,0 +1,20 @@
+name: "Upload backend code"
+
+# On push, deploy the infrastructure of the main or the dev branch, each branch
+# will have its own workspace.
+on:
+  push:
+    branches: [main, dev]
+    paths: ["terraform/backend/**", ".github/workflows/backend.yml"]
+  pull_request:
+    branches: [main, dev]
+    paths: ["terraform/backend/**", ".github/workflows/backend.yml"]
+    # TODO: the "edited" tag will trigger the vent when base branch is changed (which is what we want),
+    #      but it will also trigger when the PR is edited (which we don't want).
+    #      We leave this edge case open, to avoid having the workflow re-run for each small text changes of the PR.
+    types: [opened, synchronize, reopened, closed]
+
+# The aws group ensures that only one workflow at a time can modify the AWS
+# infrastructure (Note that terraform cloud is already handling concurrent jobs)
+concurrency: aws-lambda-${{ github.ref }}
+# TODO: TAK THE REGION FROM TEH TERRAFORM OUTPUT

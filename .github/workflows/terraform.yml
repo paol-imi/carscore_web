@@ -1,27 +1,89 @@
-name: "Terraform"
+name: "Run Terraform"
 
 # On push, deploy the infrastructure of the main or the dev branch, each branch
-# will have its own workspace.
+#
+#
+
+# On PUSH to main:
+#   0) Run terraform fmt
+#       (ensure conformity to Terraform style guide)
+#   1) Compute Terraform variables and set the TF_WORKSPACE environment variable
+#       (TF_WORKSPACE is used by Terraform CLI to select the Terraform Cloud
+#       workspace to use)
+#   2) Create the workspace of the Branch on Terraform Cloud if it not exists
+#       (We run this step even if the workspace should already exists, since we
+#       may have deleted the workspace manually)
+#   3) Run Terraform init
+#       (setup the Terraform Cloud backend)
+#   4) Run Terraform validate
+#       (ensure syntax is correct)
+#   5) Run Terraform apply
+#       (deploy the infrastructure)
+#
+# On PULL REQUEST opened (reopened) or updated to main:
+#   0) Run terraform fmt
+#       (ensure conformity to Terraform style guide)
+#   1) Compute Terraform variables and set the TF_WORKSPACE environment variable
+#       (TF_WORKSPACE is used by Terraform CLI to select the Terraform Cloud
+#       workspace to use)
+#   2) Create the workspace of the Branch on Terraform Cloud if it not exists
+#       (We run this step even if the workspace should already exists, since we
+#       may have deleted the workspace manually)
+#   3) Run Terraform init
+#       (setup the Terraform Cloud backend)
+#   4) Run Terraform validate
+#       (ensure syntax is correct)
+#   5) Run Terraform plan, continue if plan fails
+#       (show what will be deployed)
+#   6) Create of update a comment on the PR with the plan
+#       (even if plan failed)
+#   7) If the plan failed, exit with error
+#   8) Run Terraform apply
+#       (deploy the infrastructure)
+#
+# On PULL REQUEST closed to main:
+#   1) Compute Terraform variables and set the TF_WORKSPACE environment variable
+#       (TF_WORKSPACE is used by Terraform CLI to select the Terraform Cloud
+#       workspace to use)
+#   3) Run Terraform init
+#       (setup the Terraform Cloud backend)
+#   4) Run Terraform destroy, then delete the workspace
+
 on:
   push:
     branches: [main] # [main, dev]
+    # TODO: Find a way to reference this file without hardcoding the path
     paths: ["terraform/**", ".github/workflows/terraform.yml"]
   pull_request:
     branches: [main] # [main, dev]
     paths: ["terraform/**", ".github/workflows/terraform.yml"]
-    # TODO: the "edited" tag will trigger the vent when base branch is changed (which is what we want),
-    #      but it will also trigger when the PR is edited (which we don't want).
-    #      We leave this edge case open, to avoid having the workflow re-run for each small text changes of the PR.
+    # TODO: the "edited" tag will make the workflow trigger when base branch is
+    #       changed (which is what we want), but it will also trigger when the
+    #       PR is edited (which we don't want). We leave this edge case open for
+    #       now to avoid over-complicating this workflow.
     types: [opened, synchronize, reopened, closed]
 
+env:
+  ### Secrets to be defined in the github workspace
+  TF_API_TOKEN: ${{ secrets.TF_API_TOKEN }}
+  ### Global env variables
+  REF: ${{ github.event_name == 'pull_request' && github.base_ref || github.ref }}"
+  BRANCH: ${{ basename(env.REF) }}
+  MAIN_WORKSPACE: cars-workspace-branch-main
+  WORKSPACE: cars-workspace-branch-${{ env.BRANCH }} # ${{ env.BRANCH == 'main' && "prod" || 'dev' }}
+  INPUT: '-input=false -var-file=".tfvars" -var="BRANCH=${{ env.BRANCH }}" -var="AWS_REGION=${{ secrets.AWS_REGION }}"'
+  ### Variables needed to select the Terraform Cloud workspace to use
+  TF_WORKSPACE: ${{ env.WORKSPACE }}
+
 # The aws group ensures that only one workflow at a time can modify the AWS
-# infrastructure (Note that terraform cloud is already handling concurrent jobs)
+# infrastructure (even if Terraform cloud is already handling concurrent jobs).
 concurrency: aws-${{ github.ref }}
 
 jobs:
   # The terraform job is responsible for managing the Terraform lifecycle
   terraform:
     name: "Terraform"
+    if: startsWith(github.head_ref, '')
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -40,48 +102,32 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v1
         with:
-          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+          cli_config_credentials_token: ${{ env.TF_API_TOKEN }}
 
-      # Set the ENV variable based on the branch name
-      - name: Set environment
-        id: set_env
-        run: |
-          REF="${{ github.event_name  == 'pull_request' && github.base_ref || github.ref }}"
-          MAIN_WORKSPACE="cars-workspace-branch-main"
-          WORKSPACE="cars-workspace-branch-$(basename "$REF")"
-          INPUT='-input=false -var-file=".tfvars" -var="ENV=${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}" -var="AWS_REGION=${{ secrets.AWS_REGION }}"'
-
-          echo "MAIN_WORKSPACE=$MAIN_WORKSPACE" >> "$GITHUB_OUTPUT"
-          echo "WORKSPACE=$WORKSPACE" >> "$GITHUB_OUTPUT"
-          echo "INPUT=$INPUT" >> "$GITHUB_OUTPUT"
-          echo "ENV=$ENV" >> "$GITHUB_OUTPUT"
-
-          echo 'TF_WORKSPACE='$WORKSPACE >> $GITHUB_ENV
+      # Run the Terraform fmt command to check the Terraform code for formatting
+      - name: Terraform Format
+        id: fmt
+        if: ! (github.event_name == 'pull_request' && github.event.action == 'closed')
+        run: terraform fmt -check
 
       # Create the workspace if it does not exist
       - name: Create workspace
-        if: github.event_name != 'pull_request' || github.event.action != 'closed'
+        if: ! (github.event_name == 'pull_request' && github.event.action == 'closed')
         run: |
           curl \
-            --header "Authorization: Bearer ${{ secrets.TF_API_TOKEN }}" \
+            --header "Authorization: Bearer ${{ env.TF_API_TOKEN }}" \
             --header "Content-Type: application/vnd.api+json" \
             --request POST \
             --data '{
               "data": {
                 "attributes": {
-                  "name": "${{ steps.set_env.outputs.WORKSPACE }}"
+                  "name": "${{ env.WORKSPACE }}"
                 },
                 "type": "workspaces"
               }
             }' \
             https://app.terraform.io/api/v2/organizations/cars-org/workspaces
         continue-on-error: true
-
-      # Run the Terraform fmt command to check the Terraform code for formatting
-      - name: Terraform Format
-        id: fmt
-        if: github.event_name != 'pull_request' || github.event.action != 'closed'
-        run: terraform fmt -check
 
       # Run the Terraform init command to initialize the Terraform working directory
       - name: Terraform Init
@@ -91,7 +137,7 @@ jobs:
       # Run the Terraform validate command to validate the Terraform code
       - name: Terraform Validate
         id: validate
-        if: github.event_name != 'pull_request' || github.event.action != 'closed'
+        if: ! (github.event_name == 'pull_request' && github.event.action == 'closed')
         run: terraform validate -no-color
 
       # Run the Terraform plan command to generate a Terraform execution plan
@@ -100,7 +146,7 @@ jobs:
         if: github.event_name == 'pull_request' && github.event.action != 'closed'
         # The -var-file option is used to pass the Terraform variables file
         # The -var option is used to pass the ENV variable
-        run: terraform plan -no-color ${{ steps.set_env.outputs.INPUT }}
+        run: terraform plan -no-color ${{ env.INPUT }}
         # Continue the workflow even if the Terraform plan command fails, so that
         # the Terraform plan can be viewed in the pull request.
         # The workflow will be killed later
@@ -115,6 +161,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            // Build the Comment body
             const output = `#### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
             #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
             #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
@@ -130,28 +177,49 @@ jobs:
 
             *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
 
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
+            // Get the list of comments on the pull request
+            const commits = octokit.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: output
-            })
+              issue_number: context.issue.number
+            });
+
+            // Check if the comment already exists
+            const comment = commits.data.find(
+              (comment) => comment.body.includes('#### Terraform'));
+
+            // Update or create the comment
+            if (comment) {
+              await github.rest.issues.updateComment({
+                comment_id: comment.id,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: output
+              })
+            } else {
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: output
+              })
+            }
 
       # Fail the workflow if the Terraform plan step fails, this allows the pull
       # request message to be written before the workflow is killed
       - name: Terraform Plan Status
-        if: (github.event_name != 'pull_request' || github.event.action != 'closed') && steps.plan.outcome == 'failure'
+        if: steps.plan.outcome == 'failure'
         run: exit 1
 
       # Run the Terraform apply command to apply the Terraform execution plan
       - name: Terraform Apply
-        if: github.event_name == 'push'
-        run: terraform apply -auto-approve ${{ steps.set_env.outputs.INPUT }}
+        if: ! (github.event_name == 'pull_request' && github.event.action == 'closed')
+        run: terraform apply -auto-approve ${{ env.INPUT }}
 
       # Run the Terraform destroy command to destroy the Terraform execution plan
       - name: Terraform Destroy
         if: github.event_name == 'pull_request' && github.event.action == 'closed'
         run: |
-          terraform destroy -auto-approve ${{ steps.set_env.outputs.INPUT }}
-          terraform workspace select ${{ steps.set_env.outputs.MAIN_WORKSPACE }}
-          terraform workspace delete ${{ steps.set_env.outputs.WORKSPACE }}
+          terraform destroy -auto-approve ${{ env.INPUT }}
+          terraform workspace select ${{ env.MAIN_WORKSPACE }}
+          terraform workspace delete ${{ env.WORKSPACE }}

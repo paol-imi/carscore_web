@@ -1,26 +1,24 @@
 variable "AWS_REGION" {
   type        = string
   description = "AWS region in which deploy the resources."
+  default     = "us-east-1"
 }
 
-variable "ENV" {
+variable "BRANCH" {
   type        = string
-  description = "Define if the deploy for for 'prod' or 'dev'."
-
-  validation {
-    condition     = contains(["prod", "dev"], var.ENV)
-    error_message = "The ENV variable must be 'prod' or 'dev'."
-  }
+  description = "Branch name."
 }
 
 variable "AWS_ACCESS_KEY_ID" {
-  type = string
+  type        = string
+  description = "AWS access key id."
 }
 
 variable "AWS_SECRET_ACCESS_KEY" {
-  type = string
+  type        = string
+  description = "AWS secret access key."
 }
 
-variable "AWS_ROLE_ARN" {
-  type = string
-}
+# variable "AWS_ROLE_ARN" {
+#   type = string
+# }

@@ -31,7 +31,7 @@ resource "aws_s3_object" "lambda_hello_world" {
 }
 
 resource "aws_lambda_function" "hello_world" {
-  function_name = "hello_world"
+  function_name = "${var.BRANCH}.hello_world"
 
   s3_bucket = aws_s3_bucket.lambda_bucket.id
   s3_key    = aws_s3_object.lambda_hello_world.key
@@ -96,8 +96,7 @@ resource "aws_apigatewayv2_stage" "lambda" {
       status                  = "$context.status"
       responseLength          = "$context.responseLength"
       integrationErrorMessage = "$context.integrationErrorMessage"
-      }
-    )
+    })
   }
 }
 
