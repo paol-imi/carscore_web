@@ -99,7 +99,7 @@ jobs:
       # Run the Terraform fmt command to check the Terraform code for formatting
       - name: Terraform Format
         id: fmt
-        if: !(github.event_name == 'pull_request' && github.event.action == 'closed')
+        if: ! (github.event_name == 'pull_request' && github.event.action == 'closed')
         run: terraform fmt -check
 
       # Set the ENV variable based on the branch name
