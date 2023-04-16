@@ -4,7 +4,7 @@
 data "archive_file" "lambda_hello_world" {
   type = "zip"
 
-  source_dir  = "${path.module}/../backend/dist/hello-world"
+  source_dir  = "${path.module}/dist/hello-world"
   output_path = "${path.module}/dist/hello-world.zip"
 }
 

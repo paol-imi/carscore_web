@@ -49,10 +49,10 @@ on:
   push:
     branches: [main] # [main, dev]
     # TODO: Find a way to reference this file without hardcoding the path
-    paths: ["terraform/**", ".github/workflows/terraform.yml"]
+    paths: ["terraform/**", "backend/**", ".github/workflows/terraform.yml"]
   pull_request:
     branches: [main] # [main, dev]
-    paths: ["terraform/**", ".github/workflows/terraform.yml"]
+    paths: ["terraform/**", "backend/**" ".github/workflows/terraform.yml"]
     # TODO: the "edited" tag will make the workflow trigger when base branch is
     #       changed (which is what we want), but it will also trigger when the
     #       PR is edited (which we don't want). We leave this edge case open for
@@ -71,20 +71,50 @@ jobs:
   # The terraform job is responsible for managing the Terraform lifecycle
   terraform:
     name: "Terraform"
-    # Only run the job if the branch name starts with "main" or "dev"
+    # WE can limit the job to only run on some branches here
     if: startsWith(github.head_ref, '')
     runs-on: ubuntu-latest
     defaults:
       run:
-        shell: bash
-        # Set the working directory to the terraform directory
-        working-directory: terraform
+        shell: bash        
     permissions:
       # Allow the workflow to write to the pull request
       pull-requests: write
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
+      - name: Check for changes in backend
+        id: check_backend_changes
+        run: |
+          if git diff --quiet HEAD^ HEAD -- backend ; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Cache Build
+        id: cache-build
+        uses: actions/cache@v3
+        with:
+          # TODO: the docs say that "the default branch cache is available to other branches".
+          #      I assume 
+          path: dist
+          key: build-output
+
+      - name: Setup java
+        if: steps.cache-build.outputs.cache-hit != 'true' || steps.check_backend_changes.outputs.changed == 'true'
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 11
+
+      - name: Build backend
+        if: steps.cache-build.outputs.cache-hit != 'true' || steps.check_backend_changes.outputs.changed == 'true'
+        uses: gradle/gradle-build-action@v2
+        working-directory: backend
+        run: ./gradlew build
+        continue-on-error: true
 
       # The setup-terraform action is responsible for installing Terraform and
       # configuring the Terraform CLI to use the Terraform Cloud API token
@@ -97,6 +127,7 @@ jobs:
       - name: Terraform Format
         id: fmt
         if: github.event.action != 'closed'
+        working-directory: terraform
         run: terraform fmt -check
 
       # Set the ENV variable based on the branch name
@@ -139,18 +170,21 @@ jobs:
       # Run the Terraform init command to initialize the Terraform working directory
       - name: Terraform Init
         id: init
+        working-directory: terraform
         run: terraform init
 
       # Run the Terraform validate command to validate the Terraform code
       - name: Terraform Validate
         id: validate
         if: github.event.action != 'closed'
+        working-directory: terraform
         run: terraform validate -no-color
 
       # Run the Terraform plan command to generate a Terraform execution plan
       - name: Terraform Plan
         id: plan
         if: github.event_name == 'pull_request' && github.event.action != 'closed'
+        working-directory: terraform
         # The -var-file option is used to pass the Terraform variables file
         # The -var option is used to pass the ENV variable
         run: terraform plan -no-color ${{ steps.set_env.outputs.INPUT }}
@@ -221,11 +255,13 @@ jobs:
       # Run the Terraform apply command to apply the Terraform execution plan
       - name: Terraform Apply
         if: github.event.action != 'closed'
+        working-directory: terraform
         run: terraform apply -auto-approve ${{ steps.set_env.outputs.INPUT }}
 
       # Run the Terraform destroy command to destroy the Terraform execution plan
       - name: Terraform Destroy
         if: github.event.action == 'closed'
+        working-directory: terraform
         run: |
           terraform destroy -auto-approve ${{ steps.set_env.outputs.INPUT }}
           terraform workspace select ${{ steps.set_env.outputs.MAIN_WORKSPACE }}
