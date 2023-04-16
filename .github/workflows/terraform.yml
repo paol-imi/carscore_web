@@ -86,6 +86,7 @@ jobs:
 
       - name: Check for changes in backend
         id: check_backend_changes
+        if: github.event.action == 'closed'
         run: |
           if git diff --quiet HEAD^ HEAD -- backend ; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
@@ -95,6 +96,7 @@ jobs:
 
       - name: Cache Build
         id: cache-build
+        if: github.event.action == 'closed'
         uses: actions/cache@v3
         with:
           # TODO: the docs say that "the default branch cache is available to other branches".
@@ -103,21 +105,20 @@ jobs:
           key: build-output
 
       - name: Setup java
-        if: steps.cache-build.outputs.cache-hit != 'true' || steps.check_backend_changes.outputs.changed == 'true'
+        if: github.event.action == 'closed' && (steps.cache-build.outputs.cache-hit != 'true' || steps.check_backend_changes.outputs.changed == 'true')
         uses: actions/setup-java@v3
         with:
           distribution: temurin
           java-version: 11
 
-      - name: Build backend
-        if: steps.cache-build.outputs.cache-hit != 'true' || steps.check_backend_changes.outputs.changed == 'true'
+      - name: Setup gradle
+        if: github.event.action == 'closed' && (steps.cache-build.outputs.cache-hit != 'true' || steps.check_backend_changes.outputs.changed == 'true')
         uses: gradle/gradle-build-action@v2
 
       - name: Build backend
-        if: steps.cache-build.outputs.cache-hit != 'true' || steps.check_backend_changes.outputs.changed == 'true'
+        if: github.event.action == 'closed' && (steps.cache-build.outputs.cache-hit != 'true' || steps.check_backend_changes.outputs.changed == 'true')
         working-directory: backend
         run: ./gradlew build
-        continue-on-error: true
 
       # The setup-terraform action is responsible for installing Terraform and
       # configuring the Terraform CLI to use the Terraform Cloud API token
