@@ -11,6 +11,10 @@ provider "aws" {
   # }
 }
 
+provider "cloudflare" {
+  api_token = var.CLOUDFLARE_API_TOKEN
+}
+
 terraform {
 
   cloud {
@@ -29,6 +33,11 @@ terraform {
     archive = {
       source  = "hashicorp/archive"
       version = "~> 2.3.0"
+    }
+
+    cloudflare = {
+      source  = "cloudflare/cloudflare"
+      version = "~> 3.0"
     }
   }
 

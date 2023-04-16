@@ -29,6 +29,11 @@ variable "CERTIFICATE_BODY_PEM" {
   description = "Certificate body."
 }
 
+variable "CLOUDFLARE_API_TOKEN" {
+  type        = string
+  description = "Cloudflare API token."
+}
+
 # variable "AWS_ROLE_ARN" {
 #   type = string
 # }
