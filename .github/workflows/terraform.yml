@@ -82,7 +82,26 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@
+
+      # Set the ENV variable based on the branch name
+      # WORKSPACE="cars-workspace-branch-${{ github.ref == 'refs/heads/main' && 'prod' || dev }}"
+      - name: Set environment
+        id: set_env
+        run: |
+          REF="${{ github.event_name == 'pull_request' && github.base_ref || github.ref }}"
+          BRANCH=$(basename "$REF")
+          MAIN_WORKSPACE="cars-workspace-branch-main"
+          WORKSPACE="cars-workspace-branch-$BRANCH"
+          [[ "$BRANCH" == "main" ]] && RESOURCES_PREFIX="" || RESOURCES_PREFIX="$BRANCH"
+          INPUT='-input=false -var-file=".tfvars" -var="RESOURCES_PREFIX=$(echo $RESOURCES_PREFIX)"'
+
+          echo "MAIN_WORKSPACE=$MAIN_WORKSPACE" >> "$GITHUB_OUTPUT"
+          echo "WORKSPACE=$WORKSPACE" >> "$GITHUB_OUTPUT"
+          echo "BRANCH=$BRANCH" >> "$GITHUB_OUTPUT"
+          echo "INPUT=$INPUT" >> "$GITHUB_OUTPUT"
+
+          echo 'TF_WORKSPACE='$WORKSPACE >> $GITHUB_ENV
 
       - name: Check for changes in backend
         id: check_backend_changes
@@ -99,10 +118,9 @@ jobs:
         if: github.event.action == 'closed'
         uses: actions/cache@v3
         with:
-          # TODO: the docs say that "the default branch cache is available to other branches".
-          #      I assume
+          # the docs say that "the default branch cache is available to other branches".
           path: dist
-          key: build-output
+          key: build-output-${{ steps.set_env.outputs.BRANCH }}
 
       - name: Setup java
         if: github.event.action == 'closed' && (steps.cache-build.outputs.cache-hit != 'true' || steps.check_backend_changes.outputs.changed == 'true')
@@ -133,24 +151,6 @@ jobs:
         if: github.event.action != 'closed'
         working-directory: terraform
         run: terraform fmt -check
-
-      # Set the ENV variable based on the branch name
-      # WORKSPACE="cars-workspace-branch-${{ github.ref == 'refs/heads/main' && 'prod' || dev }}"
-      - name: Set environment
-        id: set_env
-        run: |
-          REF="${{ github.event_name == 'pull_request' && github.base_ref || github.ref }}"
-          BRANCH=$(basename "$REF")
-          MAIN_WORKSPACE="cars-workspace-branch-main"
-          WORKSPACE="cars-workspace-branch-$BRANCH"
-          [[ "$BRANCH" == "main" ]] && RESOURCES_PREFIX="" || RESOURCES_PREFIX="$BRANCH"
-          INPUT='-input=false -var-file=".tfvars" -var="RESOURCES_PREFIX=$(echo $RESOURCES_PREFIX)"'
-
-          echo "MAIN_WORKSPACE=$MAIN_WORKSPACE" >> "$GITHUB_OUTPUT"
-          echo "WORKSPACE=$WORKSPACE" >> "$GITHUB_OUTPUT"
-          echo "INPUT=$INPUT" >> "$GITHUB_OUTPUT"
-
-          echo 'TF_WORKSPACE='$WORKSPACE >> $GITHUB_ENV
 
       # Create the workspace if it does not exist
       - name: Create workspace
