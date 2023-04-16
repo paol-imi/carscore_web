@@ -46,7 +46,7 @@ resource "aws_apigatewayv2_stage" "lambda" {
 }
 
 resource "aws_apigatewayv2_domain_name" "lambda" {
-  domain_name = "${var.RESOURCES_PREFIX != "" ? "${var.RESOURCES_PREFIX}." : ""}api.carsdemo.win"
+  domain_name = "${var.RESOURCES_PREFIX != "main" ? "${var.RESOURCES_PREFIX}." : ""}api.carsdemo.win"
 
   domain_name_configuration {
     certificate_arn = aws_acm_certificate.lambda.arn
@@ -66,7 +66,9 @@ resource "aws_apigatewayv2_api_mapping" "lambda" {
   stage       = aws_apigatewayv2_stage.lambda.id
 }
 
-####
+#### Then, for each lambda
+
+# TODO: create custom cname for each lambda on cloudflare
 
 data "archive_file" "lambda_hello_world" {
   type = "zip"
