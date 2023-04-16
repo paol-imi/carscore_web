@@ -2,6 +2,10 @@ links
 
 - [Cloudflare docs](https://developers.cloudflare.com/pages/how-to/use-direct-upload-with-continuous-integration/)
 
+- create APi token in cloudflare
+- Create Certificate for \[\*\.\]api.carsdemo.win
+- Pass certificate and PAI token to terrafrom Cloud
+
 # Create a cloudflare account
 
 ## Register a domain

@@ -1,6 +1,6 @@
 name: "Deploy frontend"
 
-# TODO: Find a way to make preview link accessible (like in pull_requests messages)
+# TODO: Find a way to make preview-links static (or at least easily accessible).
 
 # On push, deploy the frontend to main, dev, feature, release, or hotfix
 # branches, each branch will have its own deploy. We manually remove the old
