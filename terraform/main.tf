@@ -46,9 +46,9 @@ resource "aws_apigatewayv2_stage" "lambda" {
 }
 
 resource "aws_api_gateway_domain_name" "lambda" {
-  domain_name     = "${var.RESOURCES_PREFIX != "" ? "${var.RESOURCES_PREFIX}." : ""}api.carsdemo.win"
-  certificate_arn = aws_acm_certificate.lambda.arn
-  security_policy = "TLS_1_2"
+  domain_name              = "${var.RESOURCES_PREFIX != "" ? "${var.RESOURCES_PREFIX}." : ""}api.carsdemo.win"
+  regional_certificate_arn = aws_acm_certificate.lambda.arn
+  security_policy          = "TLS_1_2"
   endpoint_configuration {
     types = ["REGIONAL"]
   }
