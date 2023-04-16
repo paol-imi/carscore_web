@@ -59,12 +59,11 @@ resource "aws_acm_certificate" "lambda" {
   certificate_body = var.CERTIFICATE_BODY_PEM
 }
 
-resource "aws_api_gateway_base_path_mapping" "example" {
+resource "aws_apigatewayv2_api_mapping" "example" {
   api_id      = aws_apigatewayv2_api.lambda.id
   stage_name  = aws_apigatewayv2_stage.lambda.name
   domain_name = aws_api_gateway_domain_name.lambda.domain_name
 }
-
 
 ####
 
