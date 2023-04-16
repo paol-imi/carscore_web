@@ -108,7 +108,7 @@ jobs:
           BRANCH=$(basename "$REF")
           MAIN_WORKSPACE="cars-workspace-branch-main"
           WORKSPACE="cars-workspace-branch-$BRANCH"
-          [[ "$BRANCH" == "main" ]] && RESOURCES_PREFIX="" || RESOURCES_PREFIX="$BRANCH""-"
+          [[ "$BRANCH" == "main" ]] && RESOURCES_PREFIX="" || RESOURCES_PREFIX="$BRANCH"
           INPUT='-input=false -var-file=".tfvars" -var="RESOURCES_PREFIX=$(echo $RESOURCES_PREFIX)"'
 
           echo "MAIN_WORKSPACE=$MAIN_WORKSPACE" >> "$GITHUB_OUTPUT"

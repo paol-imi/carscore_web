@@ -1,6 +1,12 @@
 
+locals {
+  DOT_PREFIX        = var.RESOURCES_PREFIX != "" ? "${var.RESOURCES_PREFIX}-" : ""
+  LINE_PREFIX       = var.RESOURCES_PREFIX != "" ? "${var.RESOURCES_PREFIX}-" : ""
+  UNDERSCORE_PREFIX = var.RESOURCES_PREFIX != "" ? "${var.RESOURCES_PREFIX}_" : ""
+}
+
 resource "random_pet" "lambda_bucket_name" {
-  prefix = "${var.RESOURCES_PREFIX}cars-lambda-functions"
+  prefix = "${local.LINE_PREFIX}cars-lambda-functions"
   length = 4
 }
 
@@ -16,7 +22,7 @@ resource "aws_s3_bucket_acl" "bucket_acl" {
 }
 
 resource "aws_apigatewayv2_api" "lambda" {
-  name          = "${var.RESOURCES_PREFIX}serverless_lambda_gw"
+  name          = "${local.UNDERSCORE_PREFIX}serverless_lambda_gw"
   protocol_type = "HTTP"
 }
 
@@ -24,7 +30,7 @@ resource "aws_apigatewayv2_api" "lambda" {
 resource "aws_apigatewayv2_stage" "lambda" {
   api_id = aws_apigatewayv2_api.lambda.id
 
-  name        = "${var.RESOURCES_PREFIX}serverless_lambda_stage"
+  name        = "${local.UNDERSCORE_PREFIX}v1"
   auto_deploy = true
 
   access_log_settings {
@@ -46,7 +52,7 @@ resource "aws_apigatewayv2_stage" "lambda" {
 }
 
 resource "aws_apigatewayv2_domain_name" "lambda" {
-  domain_name = "${var.RESOURCES_PREFIX != "" ? "${var.RESOURCES_PREFIX}." : ""}api.carsdemo.win"
+  domain_name = "${local.DOT_PREFIX}api.carsdemo.win"
 
   domain_name_configuration {
     certificate_arn = aws_acm_certificate.lambda.arn
@@ -81,14 +87,14 @@ resource "aws_s3_object" "lambda_hello_world" {
   bucket        = aws_s3_bucket.lambda_bucket.id
   storage_class = "ONEZONE_IA"
 
-  key    = "${var.RESOURCES_PREFIX}hello-world.zip"
+  key    = "${local.LINE_PREFIX}hello-world.zip"
   source = data.archive_file.lambda_hello_world.output_path
 
   etag = filemd5(data.archive_file.lambda_hello_world.output_path)
 }
 
 resource "aws_lambda_function" "hello_world" {
-  function_name = "${var.RESOURCES_PREFIX}hello-world"
+  function_name = "${local.LINE_PREFIX}hello-world"
 
   s3_bucket = aws_s3_bucket.lambda_bucket.id
   s3_key    = aws_s3_object.lambda_hello_world.key
