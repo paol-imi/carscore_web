@@ -111,6 +111,7 @@ jobs:
           [[ "$BRANCH" == "main" ]] && RESOURCES_PREFIX="" || RESOURCES_PREFIX="$BRANCH""-"
           INPUT='-input=false -var-file=".tfvars" -var="RESOURCES_PREFIX=$(echo $RESOURCES_PREFIX)"'
 
+          echo "MAIN_WORKSPACE=$MAIN_WORKSPACE" >> "$GITHUB_OUTPUT"
           echo "WORKSPACE=$WORKSPACE" >> "$GITHUB_OUTPUT"
           echo "INPUT=$INPUT" >> "$GITHUB_OUTPUT"
 
