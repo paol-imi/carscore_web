@@ -19,6 +19,16 @@ variable "AWS_SECRET_ACCESS_KEY" {
   description = "AWS secret access key."
 }
 
+variable "PRIVATE_KEY_PEM" {
+  type        = string
+  description = "Private key."
+}
+
+variable "CERTIFICATE_BODY_PEM" {
+  type        = string
+  description = "Certificate body."
+}
+
 # variable "AWS_ROLE_ARN" {
 #   type = string
 # }

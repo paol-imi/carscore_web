@@ -45,6 +45,26 @@ resource "aws_apigatewayv2_stage" "lambda" {
   }
 }
 
+resource "aws_api_gateway_domain_name" "lambda" {
+  domain_name     = "${var.RESOURCES_PREFIX != "" ? "${var.RESOURCES_PREFIX}." : ""}api.carsdemo.win"
+  certificate_arn = aws_acm_certificate.lambda.arn
+  security_policy = "TLS_1_2"
+  endpoint_configuration {
+    types = ["REGIONAL"]
+  }
+}
+
+resource "aws_acm_certificate" "lambda" {
+  private_key      = var.PRIVATE_KEY_PEM
+  certificate_body = var.CERTIFICATE_BODY_PEM
+}
+
+resource "aws_api_gateway_base_path_mapping" "example" {
+  api_id      = aws_apigatewayv2_api.lambda.id
+  stage_name  = aws_apigatewayv2_stage.lambda.name
+  domain_name = aws_api_gateway_domain_name.lambda.domain_name
+}
+
 
 ####
 
