@@ -17,7 +17,7 @@ resource "aws_s3_bucket_acl" "bucket_acl" {
 data "archive_file" "lambda_hello_world" {
   type = "zip"
 
-  source_dir  = "${path.module}/../backend/dist/hello_world"
+  source_dir  = "../backend/dist/hello_world"
   output_path = "${path.module}/hello-world.zip"
 }
 
@@ -26,9 +26,9 @@ resource "aws_s3_object" "lambda_hello_world" {
   storage_class = "ONEZONE_IA"
 
   key    = "${var.RESOURCES_PREFIX}hello-world.zip"
-  source = data.archive_file.lambda_hello.output_path
+  source = data.archive_file.lambda_hello_world.output_path
 
-  etag = filemd5(data.archive_file.lambda_hello.output_path)
+  etag = filemd5(data.archive_file.lambda_hello_world.output_path)
 }
 
 resource "aws_lambda_function" "hello_world" {
@@ -40,7 +40,7 @@ resource "aws_lambda_function" "hello_world" {
   runtime = "nodejs12.x"
   handler = "hello.handler"
 
-  source_code_hash = data.archive_file.lambda_hello.output_base64sha256
+  source_code_hash = data.archive_file.lambda_hello_world.output_base64sha256
 
   role = aws_iam_role.lambda_exec.arn
 }
