@@ -52,7 +52,7 @@ on:
     paths: ["terraform/**", "backend/**", ".github/workflows/terraform.yml"]
   pull_request:
     branches: [main] # [main, dev]
-    paths: ["terraform/**", "backend/**" ".github/workflows/terraform.yml"]
+    paths: ["terraform/**", "backend/**", ".github/workflows/terraform.yml"]
     # TODO: the "edited" tag will make the workflow trigger when base branch is
     #       changed (which is what we want), but it will also trigger when the
     #       PR is edited (which we don't want). We leave this edge case open for
@@ -76,7 +76,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        shell: bash        
+        shell: bash
     permissions:
       # Allow the workflow to write to the pull request
       pull-requests: write
@@ -98,7 +98,7 @@ jobs:
         uses: actions/cache@v3
         with:
           # TODO: the docs say that "the default branch cache is available to other branches".
-          #      I assume 
+          #      I assume
           path: dist
           key: build-output
 
