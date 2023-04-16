@@ -46,7 +46,7 @@ resource "aws_apigatewayv2_stage" "lambda" {
 }
 
 resource "aws_apigatewayv2_domain_name" "lambda" {
-  domain_name = "${var.RESOURCES_PREFIX != "main" ? "${var.RESOURCES_PREFIX}." : ""}api.carsdemo.win"
+  domain_name = "${var.RESOURCES_PREFIX != "" ? "${var.RESOURCES_PREFIX}." : ""}api.carsdemo.win"
 
   domain_name_configuration {
     certificate_arn = aws_acm_certificate.lambda.arn
