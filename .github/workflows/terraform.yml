@@ -184,7 +184,7 @@ jobs:
             *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
 
             // Get the list of comments on the pull request
-            const commits = octokit.rest.issues.listComments({
+            const commits = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number
