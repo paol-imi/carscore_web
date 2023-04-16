@@ -19,10 +19,11 @@ resource "aws_apigatewayv2_api" "lambda" {
   protocol_type = "HTTP"
 }
 
+# TODO: Move all the resources that are common in a workspace share between branches
 resource "aws_apigatewayv2_stage" "lambda" {
   api_id = aws_apigatewayv2_api.lambda.id
 
-  name        = "serverless_lambda_stage"
+  name        = "${var.RESOURCES_PREFIX}serverless_lambda_stage"
   auto_deploy = true
 
   access_log_settings {
