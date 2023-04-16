@@ -4,7 +4,7 @@ variable "AWS_REGION" {
   default     = "us-east-1"
 }
 
-variable "BRANCH" {
+variable "RESOURCES_PREFIX" {
   type        = string
   description = "Branch name."
 }

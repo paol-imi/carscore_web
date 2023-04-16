@@ -1,9 +1,5 @@
 name: "Run Terraform"
 
-# On push, deploy the infrastructure of the main or the dev branch, each branch
-#
-#
-
 # On PUSH to main:
 #   0) Run terraform fmt
 #       (ensure conformity to Terraform style guide)
@@ -64,7 +60,7 @@ on:
     types: [opened, synchronize, reopened, closed]
 
 env:
-  ### Secrets to be defined in the github workspace
+  # Secrets to be defined in the github repository
   TF_API_TOKEN: ${{ secrets.TF_API_TOKEN }}
 
 # The aws group ensures that only one workflow at a time can modify the AWS
@@ -75,6 +71,7 @@ jobs:
   # The terraform job is responsible for managing the Terraform lifecycle
   terraform:
     name: "Terraform"
+    # Only run the job if the branch name starts with "main" or "dev"
     if: startsWith(github.head_ref, '')
     runs-on: ubuntu-latest
     defaults:
@@ -103,7 +100,7 @@ jobs:
         run: terraform fmt -check
 
       # Set the ENV variable based on the branch name
-      # WORKSPACE="cars-workspace-branch-${{ github.ref == 'refs/heads/main' && 'main' || dev }}"
+      # WORKSPACE="cars-workspace-branch-${{ github.ref == 'refs/heads/main' && 'prod' || dev }}"
       - name: Set environment
         id: set_env
         run: |
@@ -111,7 +108,8 @@ jobs:
           BRANCH=$(basename "$REF")
           MAIN_WORKSPACE="cars-workspace-branch-main"
           WORKSPACE="cars-workspace-branch-$BRANCH"
-          INPUT='-input=false -var-file=".tfvars" -var="BRANCH=$(echo $BRANCH)" -var="AWS_REGION=${{ secrets.AWS_REGION }}"'
+          [[ "$BRANCH" == "main" ]] && RESOURCES_PREFIX="" || RESOURCES_PREFIX="$BRANCH""-"
+          INPUT='-input=false -var-file=".tfvars" -var="RESOURCES_PREFIX=$(echo $RESOURCES_PREFIX)"'
 
           echo "WORKSPACE=$WORKSPACE" >> "$GITHUB_OUTPUT"
           echo "INPUT=$INPUT" >> "$GITHUB_OUTPUT"
@@ -226,7 +224,7 @@ jobs:
 
       # Run the Terraform destroy command to destroy the Terraform execution plan
       - name: Terraform Destroy
-        if: github.event_name == 'pull_request' && github.event.action == 'closed'
+        if: github.event.action == 'closed'
         run: |
           terraform destroy -auto-approve ${{ steps.set_env.outputs.INPUT }}
           terraform workspace select ${{ steps.set_env.outputs.MAIN_WORKSPACE }}

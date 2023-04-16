@@ -1,6 +1,6 @@
 
 resource "random_pet" "lambda_bucket_name" {
-  prefix = "learn-terraform-functions"
+  prefix = "${var.RESOURCES_PREFIX}cars-lambda-functions"
   length = 4
 }
 
@@ -14,24 +14,25 @@ resource "aws_s3_bucket_acl" "bucket_acl" {
   acl    = "private"
 }
 
-data "archive_file" "lambda_hello_world" {
+data "archive_file" "lambda_hello" {
   type = "zip"
 
-  source_dir  = "${path.module}/hello-world"
+  source_dir  = "${path.module}/../backend/dist/hello"
   output_path = "${path.module}/hello-world.zip"
 }
 
 resource "aws_s3_object" "lambda_hello_world" {
-  bucket = aws_s3_bucket.lambda_bucket.id
+  bucket        = aws_s3_bucket.lambda_bucket.id
+  storage_class = "ONEZONE_IA"
 
-  key    = "hello-world.zip"
-  source = data.archive_file.lambda_hello_world.output_path
+  key    = "${var.RESOURCES_PREFIX}hello-world.zip"
+  source = data.archive_file.lambda_hello.output_path
 
-  etag = filemd5(data.archive_file.lambda_hello_world.output_path)
+  etag = filemd5(data.archive_file.lambda_hello.output_path)
 }
 
 resource "aws_lambda_function" "hello_world" {
-  function_name = "${var.BRANCH}_hello_world"
+  function_name = "${var.RESOURCES_PREFIX}hello-world"
 
   s3_bucket = aws_s3_bucket.lambda_bucket.id
   s3_key    = aws_s3_object.lambda_hello_world.key
@@ -39,7 +40,7 @@ resource "aws_lambda_function" "hello_world" {
   runtime = "nodejs12.x"
   handler = "hello.handler"
 
-  source_code_hash = data.archive_file.lambda_hello_world.output_base64sha256
+  source_code_hash = data.archive_file.lambda_hello.output_base64sha256
 
   role = aws_iam_role.lambda_exec.arn
 }
