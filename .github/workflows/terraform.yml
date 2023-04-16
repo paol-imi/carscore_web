@@ -112,6 +112,9 @@ jobs:
       - name: Build backend
         if: steps.cache-build.outputs.cache-hit != 'true' || steps.check_backend_changes.outputs.changed == 'true'
         uses: gradle/gradle-build-action@v2
+
+      - name: Build backend
+        if: steps.cache-build.outputs.cache-hit != 'true' || steps.check_backend_changes.outputs.changed == 'true'
         working-directory: backend
         run: ./gradlew build
         continue-on-error: true
