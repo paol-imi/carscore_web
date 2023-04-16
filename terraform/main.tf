@@ -14,10 +14,10 @@ resource "aws_s3_bucket_acl" "bucket_acl" {
   acl    = "private"
 }
 
-data "archive_file" "lambda_hello" {
+data "archive_file" "lambda_hello_world" {
   type = "zip"
 
-  source_dir  = "${path.module}/../backend/dist/hello"
+  source_dir  = "${path.module}/../backend/dist/hello_world"
   output_path = "${path.module}/hello-world.zip"
 }
 
