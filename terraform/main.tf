@@ -15,7 +15,7 @@ resource "aws_s3_bucket_acl" "bucket_acl" {
 }
 
 resource "aws_apigatewayv2_api" "lambda" {
-  name          = "serverless_lambda_gw"
+  name          = "${var.RESOURCES_PREFIX}serverless_lambda_gw"
   protocol_type = "HTTP"
 }
 
