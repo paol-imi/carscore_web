@@ -191,7 +191,7 @@ jobs:
             });
 
             // Check if the comment already exists
-            const comment = commits.data.find(
+            const comment = commits.find(
               (comment) => comment.body.includes('#### Terraform'));
 
             // Update or create the comment
