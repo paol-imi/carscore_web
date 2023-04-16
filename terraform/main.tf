@@ -45,12 +45,13 @@ resource "aws_apigatewayv2_stage" "lambda" {
   }
 }
 
-resource "aws_api_gateway_domain_name" "lambda" {
-  domain_name              = "${var.RESOURCES_PREFIX != "" ? "${var.RESOURCES_PREFIX}." : ""}api.carsdemo.win"
-  regional_certificate_arn = aws_acm_certificate.lambda.arn
-  security_policy          = "TLS_1_2"
-  endpoint_configuration {
-    types = ["REGIONAL"]
+resource "aws_apigatewayv2_domain_name" "lambda" {
+  domain_name = "${var.RESOURCES_PREFIX != "" ? "${var.RESOURCES_PREFIX}." : ""}api.carsdemo.win"
+
+  domain_name_configuration {
+    certificate_arn = aws_acm_certificate.lambda.arn
+    endpoint_type   = "REGIONAL"
+    security_policy = "TLS_1_2"
   }
 }
 
@@ -59,10 +60,10 @@ resource "aws_acm_certificate" "lambda" {
   certificate_body = var.CERTIFICATE_BODY_PEM
 }
 
-resource "aws_apigatewayv2_api_mapping" "example" {
+resource "aws_apigatewayv2_api_mapping" "lambda" {
   api_id      = aws_apigatewayv2_api.lambda.id
-  stage_name  = aws_apigatewayv2_stage.lambda.name
-  domain_name = aws_api_gateway_domain_name.lambda.domain_name
+  domain_name = aws_apigatewayv2_domain_name.lambda.id
+  stage       = aws_apigatewayv2_stage.lambda.id
 }
 
 ####
