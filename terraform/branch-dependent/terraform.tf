@@ -12,7 +12,11 @@ provider "aws" {
 }
 
 provider "cloudflare" {
-  api_token = var.CLOUDFLARE_API_TOKEN
+  # FIXME: Terraform has problems in athenticating with CLOUDFLARE
+  # For now we use email and acces key
+  # api_token = var.CLOUDFLARE_API_TOKEN
+  email   = var.CLOUDFLARE_EMAIL
+  api_key = var.CLOUDFLARE_API_KEY
 }
 
 terraform {

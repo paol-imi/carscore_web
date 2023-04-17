@@ -73,7 +73,7 @@ resource "aws_cloudwatch_log_group" "api_gw" {
 }
 
 resource "cloudflare_record" "api" {
-  zone_id = "40cfee311e8c12bd6c6e4ccdee9b6cd1"
+  zone_id = var.CLOUDFLARE_ZONE_ID
   name    = "${local.DOT_PREFIX}api.carsdemo.win"
   value   = aws_apigatewayv2_domain_name.lambda.domain_name
   type    = "CNAME"
