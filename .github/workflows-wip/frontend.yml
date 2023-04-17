@@ -7,15 +7,19 @@ name: "Deploy frontend"
 # branches, each branch will have its own deploy. We manually remove the old
 # ones since Cloudflare pages does not expose any first order API. On Delete,
 # remove all deploys related to the deleted branch.
-# TODO: prefer the approach of the terraform action, and deploy site only for
-# branches with an opened pull request to main after the cloudflare action solve
-# this issue: https://github.com/cloudflare/pages-action/pull/70.
 on:
   push:
-    branches: [main, dev, "feature-**", "release-**", "hotfix-**"]
+    branches: [main] # [main, dev]
+    # TODO: Find a way to reference this file without hardcoding the path
     paths: ["frontend/**", ".github/workflows/frontend.yml"]
-  delete:
-    branches: [main, dev, "feature-**", "release-**", "hotfix-**"]
+  pull_request:
+    branches: [main] # [main, dev]
+    paths: ["frontend/**", ".github/workflows/frontend.yml"]
+    # TODO: the "edited" tag will make the workflow trigger when base branch is
+    #       changed (which is what we want), but it will also trigger when the
+    #       PR is edited (which we don't want). We leave this edge case open for
+    #       now to avoid over-complicating this workflow.
+    types: [opened, synchronize, reopened, closed]
 
 env:
   # Secrets are set in the repository settings
@@ -49,7 +53,7 @@ jobs:
 
       # Build and test the frontend
       - name: Build React App
-        if: github.event_name == 'push'
+        if: github.event.action != 'closed'
         run: |
           npm ci
           npm run test
@@ -58,7 +62,7 @@ jobs:
       # Deploy to Cloudflare Pages
       - name: Publish to Cloudflare Pages
         uses: cloudflare/pages-action@v1
-        if: github.event_name == 'push'
+        if: github.event.action != 'closed'
         with:
           apiToken: ${{ env.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ env.CLOUDFLARE_ACCOUNT_ID }}
@@ -82,8 +86,10 @@ jobs:
           # Parse the response to get the latest deployment on the current branch
           latest_deployments=$(echo "$response" | jq ".result[] | select(.deployment_trigger.metadata.branch == \"$BRANCH\") | .id")
 
+          echo "$latest_deployments"
+
           # If the event is a push, we want to keep the last deployment
-          is_first_line=${{ github.event_name == 'push' && true || false}}
+          is_first_line=${{ github.event.action != 'closed' && true || false}}
           while IFS= read -r latest_deployments; do
             if $is_first_line; then
               is_first_line=false
