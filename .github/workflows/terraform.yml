@@ -119,7 +119,7 @@ jobs:
         uses: actions/cache@v3
         with:
           # the docs say that "the default branch cache is available to other branches".
-          path: dist
+          path: terraform/branch-dependent/dist
           key: build-output-${{ steps.set_env.outputs.BRANCH }}
 
       - name: Setup java
@@ -136,7 +136,12 @@ jobs:
       - name: Build backend
         if: github.event.action != 'closed' && (steps.cache-build.outputs.cache-hit != 'true' || steps.check_backend_changes.outputs.changed == 'true')
         working-directory: backend
-        run: ./gradlew build
+        run: |
+          ./gradlew build
+          cd ../terraform/branch-dependent
+          ls
+          cd dist
+          ls
 
       # The setup-terraform action is responsible for installing Terraform and
       # configuring the Terraform CLI to use the Terraform Cloud API token
