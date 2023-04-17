@@ -269,5 +269,6 @@ jobs:
         working-directory: terraform
         run: |
           terraform destroy -auto-approve ${{ steps.set_env.outputs.INPUT }}
+          TF_WORKSPACE=${{ steps.set_env.outputs.MAIN_WORKSPACE }}
           terraform workspace select ${{ steps.set_env.outputs.MAIN_WORKSPACE }}
           terraform workspace delete ${{ steps.set_env.outputs.WORKSPACE }}
