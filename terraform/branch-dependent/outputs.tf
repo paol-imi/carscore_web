@@ -8,7 +8,7 @@ output "lambda_bucket_name" {
 output "function_name" {
   description = "Name of the Lambda function."
 
-  value = aws_lambda_function.lambda.test.function_name
+  value = aws_lambda_function.lambda["test"].function_name
 }
 
 output "base_url" {
