@@ -28,7 +28,6 @@ task buildZip(type: Zip) {
 }
 
 task buildJar(type: Jar) {
-    from 'src/main/java/example'
     archiveBaseName = 'example'
     destinationDirectory = file("../terraform/branch-dependent/dist")
 }
