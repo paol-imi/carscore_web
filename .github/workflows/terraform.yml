@@ -123,18 +123,18 @@ jobs:
           key: build-output-${{ steps.set_env.outputs.BRANCH }}
 
       - name: Setup java
-        if: github.event.action != 'closed' && (steps.cache-build.outputs.cache-hit != 'true' || steps.check_backend_changes.outputs.changed == 'true')
+        if: github.event.action != 'closed' && !(steps.cache-build.outputs.cache-hit == 'true' && steps.check_backend_changes.outputs.changed == 'false')
         uses: actions/setup-java@v3
         with:
           distribution: temurin
           java-version: 11
 
       - name: Setup gradle
-        if: github.event.action != 'closed' && (steps.cache-build.outputs.cache-hit != 'true' || steps.check_backend_changes.outputs.changed == 'true')
+        if: github.event.action != 'closed' && !(steps.cache-build.outputs.cache-hit == 'true' && steps.check_backend_changes.outputs.changed == 'false')
         uses: gradle/gradle-build-action@v2
 
       - name: Build backend
-        if: github.event.action != 'closed' && (steps.cache-build.outputs.cache-hit != 'true' || steps.check_backend_changes.outputs.changed == 'true')
+        if: github.event.action != 'closed' && !(steps.cache-build.outputs.cache-hit == 'true' && steps.check_backend_changes.outputs.changed == 'false')
         working-directory: backend
         run: ./gradlew build
 
