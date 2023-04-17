@@ -1,10 +1,4 @@
 
-locals {
-  DOT_PREFIX        = var.RESOURCES_PREFIX != "" ? "${var.RESOURCES_PREFIX}." : ""
-  LINE_PREFIX       = var.RESOURCES_PREFIX != "" ? "${var.RESOURCES_PREFIX}-" : ""
-  UNDERSCORE_PREFIX = var.RESOURCES_PREFIX != "" ? "${var.RESOURCES_PREFIX}_" : ""
-}
-
 resource "random_pet" "lambda_bucket_name" {
   prefix = "${local.LINE_PREFIX}cars-lambda-functions"
   length = 4

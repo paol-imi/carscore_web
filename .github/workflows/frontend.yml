@@ -1,6 +1,7 @@
 name: "Deploy frontend"
 
-# TODO: Find a way to make preview-links static (or at least easily accessible).
+# Note: preview links are available in the summary of the last run of this
+# Github action (for each branch).
 
 # On push, deploy the frontend to main, dev, feature, release, or hotfix
 # branches, each branch will have its own deploy. We manually remove the old
@@ -8,10 +9,17 @@ name: "Deploy frontend"
 # remove all deploys related to the deleted branch.
 on:
   push:
-    branches: [main, dev, "feature-**", "release-**", "hotfix-**"]
+    branches: [main] # [main, dev]
+    # TODO: Find a way to reference this file without hardcoding the path
     paths: ["frontend/**", ".github/workflows/frontend.yml"]
-  delete:
-    branches: [main, dev, "feature-**", "release-**", "hotfix-**"]
+  pull_request:
+    branches: [main] # [main, dev]
+    paths: ["frontend/**", ".github/workflows/frontend.yml"]
+    # TODO: the "edited" tag will make the workflow trigger when base branch is
+    #       changed (which is what we want), but it will also trigger when the
+    #       PR is edited (which we don't want). We leave this edge case open for
+    #       now to avoid over-complicating this workflow.
+    types: [opened, synchronize, reopened, closed]
 
 env:
   # Secrets are set in the repository settings
@@ -45,7 +53,7 @@ jobs:
 
       # Build and test the frontend
       - name: Build React App
-        if: github.event_name == 'push'
+        if: github.event.action != 'closed'
         run: |
           npm ci
           npm run test
@@ -54,7 +62,7 @@ jobs:
       # Deploy to Cloudflare Pages
       - name: Publish to Cloudflare Pages
         uses: cloudflare/pages-action@v1
-        if: github.event_name == 'push'
+        if: github.event.action != 'closed'
         with:
           apiToken: ${{ env.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ env.CLOUDFLARE_ACCOUNT_ID }}
@@ -66,6 +74,8 @@ jobs:
       # Cleanup old deployments
       - name: Cleanup old deployments
         run: |
+          REF="${{ github.event_name == 'pull_request' && github.head_ref || github.ref }}"
+          BRANCH=$(basename "$REF")
 
           # Get all deployments
           response=$(curl --silent --request GET \
@@ -74,10 +84,12 @@ jobs:
             --header 'Authorization: Bearer ${{ env.CLOUDFLARE_API_TOKEN }}')
 
           # Parse the response to get the latest deployment on the current branch
-          latest_deployments=$(echo "$response" | jq '.result[] | select(.deployment_trigger.metadata.branch == "main") | .id ')
+          latest_deployments=$(echo "$response" | jq ".result[] | select(.deployment_trigger.metadata.branch == \"$BRANCH\") | .id")
+
+          echo "$latest_deployments"
 
           # If the event is a push, we want to keep the last deployment
-          is_first_line=${{ github.event_name == 'push' && true || false}}
+          is_first_line=${{ github.event.action != 'closed' && true || false}}
           while IFS= read -r latest_deployments; do
             if $is_first_line; then
               is_first_line=false
@@ -92,3 +104,13 @@ jobs:
             fi
 
           done <<<"$latest_deployments"
+
+#      - name: Configure AWS Credentials
+#        uses: aws-actions/configure-aws-credentials@v1
+#        with:
+#          role-to-assume: ${{ secrets.AWS_GITHUB_ROLE }}
+#          role-duration-seconds: 900 # the ttl of the session, in seconds.
+#          aws-region: ${{ secrets.AWS_REGION }}
+
+#      - name: Deploy app build to S3 bucket
+#        run: aws s3 sync ./dist/ s3://cars-frontend-bucket --delete
