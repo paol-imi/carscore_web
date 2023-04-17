@@ -6,7 +6,7 @@ variable "AWS_REGION" {
 
 variable "RESOURCES_PREFIX" {
   type        = string
-  description = "Branch name."
+  description = "Resources prefix."
 }
 
 variable "AWS_ACCESS_KEY_ID" {

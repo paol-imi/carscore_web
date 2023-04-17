@@ -1,0 +1,2 @@
+- Automate dns CNAME record creation
+- Sync build output from gradle to terraform
