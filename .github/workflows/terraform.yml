@@ -168,7 +168,7 @@ jobs:
                 "type": "workspaces"
               }
             }' \
-            https://app.terraform.io/api/v2/organizations/cars-org/workspaces
+            https://app.terraform.io/api/v2/organizations/cars-organization/workspaces
         continue-on-error: true
 
       # Run the Terraform init command to initialize the Terraform working directory
