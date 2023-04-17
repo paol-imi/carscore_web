@@ -12,7 +12,6 @@ provider "aws" {
 }
 
 provider "cloudflare" {
-  email     = "terraformcloud.cars@gmail.com"
   api_token = var.CLOUDFLARE_API_TOKEN
 }
 
