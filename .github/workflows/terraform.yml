@@ -260,10 +260,7 @@ jobs:
       - name: Terraform Apply
         if: github.event.action != 'closed'
         working-directory: terraform/branch-dependent
-        run: |
-          ls
-          ls dist
-          terraform apply -auto-approve ${{ steps.set_env.outputs.INPUT }}
+        run: terraform apply -auto-approve ${{ steps.set_env.outputs.INPUT }}
 
       # Run the Terraform destroy command to destroy the Terraform execution plan
       - name: Terraform Destroy
