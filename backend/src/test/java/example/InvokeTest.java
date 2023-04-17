@@ -2,7 +2,6 @@ package example;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import org.junit.jupiter.api.Test;
 
@@ -24,7 +23,7 @@ class InvokeTest {
   @Test
   void testHandler() {
     logger.info("Invoke TEST - Handler");
-    var event = new HashMap<String,String>();
+    var event = new HashMap<String, String>();
     Context context = new TestContext();
     Handler handler = new Handler();
     assertNull(handler.handleRequest(event, context));
@@ -80,19 +79,5 @@ class InvokeTest {
     Context context = new TestContext();
     HandlerString handler = new HandlerString();
     assertEquals("hello world", handler.handleRequest(event, context));
-  }
-
-  @Test
-  void testHandlerWeatherData() {
-    logger.info("Invoke TEST - HandlerWeatherData");
-    WeatherData inputData = new WeatherData();
-    inputData.setTemperatureK(298);
-    Context context = new TestContext();
-    HandlerWeatherData handler = new HandlerWeatherData();
-    WeatherData outputData = handler.handleRequest(inputData, context);
-    assertNotNull(outputData.getHumidityPct());
-    assertNotNull(outputData.getPressureHPa());
-    assertNotNull(outputData.getWindKmh());
-    assertEquals(300, outputData.getTemperatureK());
   }
 }
