@@ -1,6 +1,6 @@
 name: "Deploy frontend"
 
-# Note: preview links are available in the summary of the last run of this 
+# Note: preview links are available in the summary of the last run of this
 # Github action (for each branch).
 
 # On push, deploy the frontend to main, dev, feature, release, or hotfix
@@ -74,7 +74,7 @@ jobs:
       # Cleanup old deployments
       - name: Cleanup old deployments
         run: |
-            REF="${{ github.event_name == 'pull_request' && github.head_ref || github.ref }}"
+          REF="${{ github.event_name == 'pull_request' && github.head_ref || github.ref }}"
           BRANCH=$(basename "$REF")
 
           # Get all deployments
