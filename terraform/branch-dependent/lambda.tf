@@ -6,8 +6,8 @@ data "archive_file" "lambda_code" {
 
   type = "zip"
 
-  source_file = "${path.module}/dist/example.jar"
-  output_path = "${path.module}/dist/example.zip"
+  source_file = "${path.module}/dist/build.jar"
+  output_path = "${path.module}/dist/build.zip"
 }
 
 resource "aws_s3_object" "lambda_code_object" {
