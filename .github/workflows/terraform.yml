@@ -83,6 +83,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
 
       # Set the ENV variable based on the branch name
       # WORKSPACE="cars-workspace-branch-${{ github.ref == 'refs/heads/main' && 'prod' || dev }}"
@@ -107,14 +109,7 @@ jobs:
         id: check_backend_changes
         if: github.event.action != 'closed'
         run: |
-          # Get the latest commit SHA on the current branch
-          LATEST_COMMIT=$(git rev-parse HEAD)
-
-          # Get the parent commit SHA of the latest commit on the current branch
-          PARENT_COMMIT=$(git rev-parse ${LATEST_COMMIT}^)
-
-          # Check if the latest changes included files in the backend directory
-          if git diff --name-only $LATEST_COMMIT $PARENT_COMMIT | grep -q "backend/"; then
+          if git diff --quiet HEAD^ HEAD -- backend ; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
           else
             echo "changed=false" >> "$GITHUB_OUTPUT"
