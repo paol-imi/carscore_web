@@ -1,13 +1,6 @@
 
 # TODO: create custom cname for each api gateway stage on cloudflare
 
-locals {
-  lambdas = [
-    "hello-world",
-    "test",
-  ]
-}
-
 data "archive_file" "lambda_code" {
   for_each = toset(local.lambdas)
 
@@ -85,10 +78,12 @@ resource "aws_apigatewayv2_integration" "lambda_apigatewayvw2_integration" {
 }
 
 resource "aws_apigatewayv2_route" "lambda_apigatewayvw2_route" {
+  for_each = toset(local.lambdas)
+
   api_id = aws_apigatewayv2_api.lambda.id
 
   route_key = "GET /${each.value}"
-  target    = "integrations/${aws_apigatewayv2_integration.lambda_apigatewayvw2_integration.id}"
+  target    = "integrations/${aws_apigatewayv2_integration.lambda_apigatewayvw2_integration[each.value].id}"
 }
 
 resource "aws_lambda_permission" "api_gw" {

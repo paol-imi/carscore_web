@@ -6,9 +6,11 @@ output "lambda_bucket_name" {
 }
 
 output "function_name" {
+  for_each = toset(local.lambdas)
+
   description = "Name of the Lambda function."
 
-  value = aws_lambda_function.hello_world.function_name
+  value = aws_lambda_function.lambda[each.value].function_name
 }
 
 output "base_url" {
