@@ -6,8 +6,8 @@ data "archive_file" "lambda_code" {
 
   type = "zip"
 
-  source_dir  = "${path.module}/dist/${each.value}"
-  output_path = "${path.module}/dist/${each.value}.zip"
+  source_dir  = "${path.module}/dist/example"
+  output_path = "${path.module}/dist/example.zip"
 }
 
 resource "aws_s3_object" "lambda_code_object" {
@@ -30,8 +30,8 @@ resource "aws_lambda_function" "lambda" {
   s3_bucket = aws_s3_bucket.lambda_bucket.id
   s3_key    = aws_s3_object.lambda_code_object[each.value].key
 
-  runtime = "nodejs12.x"
-  handler = "${each.value}.handler"
+  runtime = "java11"
+  handler = "example.${each.value}::handleRequest"
 
   source_code_hash = data.archive_file.lambda_code[each.value].output_base64sha256
 

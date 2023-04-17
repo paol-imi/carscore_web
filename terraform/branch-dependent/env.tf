@@ -7,7 +7,7 @@ locals {
 
 locals {
   lambdas = [
-    "hello-world",
-    "test",
+    "Handler",
+    "HandlerDivide",
   ]
 }

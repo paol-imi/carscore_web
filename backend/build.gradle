@@ -27,16 +27,10 @@ task buildZip(type: Zip) {
     archiveFileName = 'hello-word.zip'
 }
 
-task oneJar(type: Jar) {
+task buildJar(type: Jar) {
     from 'src/main/java/example'
-    archiveBaseName = ''
-    destinationDirectory = file("../terraform/branch-dependent/dist/two")
-}
-
-task twoJar(type: Jar) {
-    from 'src/main/java/example'
-    archiveBaseName = 'two'
-    destinationDirectory = file("../terraform/branch-dependent/dist/two")
+    archiveBaseName = 'example'
+    destinationDirectory = file("../terraform/branch-dependent/dist")
 }
 
 java {
@@ -44,4 +38,4 @@ java {
     targetCompatibility = JavaVersion.VERSION_11
 }
 
-build.dependsOn buildZip
+build.dependsOn buildJar
