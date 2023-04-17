@@ -6,7 +6,7 @@ data "archive_file" "lambda_code" {
 
   type = "zip"
 
-  source_dir  = "${path.module}/dist/example"
+  source_dir  = "${path.module}/dist/example.jar"
   output_path = "${path.module}/dist/example.zip"
 }
 
