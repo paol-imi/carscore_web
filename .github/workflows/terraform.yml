@@ -94,7 +94,7 @@ jobs:
           MAIN_WORKSPACE="cars-workspace-branch-main"
           WORKSPACE="cars-workspace-branch-$BRANCH"
           [[ "$BRANCH" == "main" ]] && RESOURCES_PREFIX="" || RESOURCES_PREFIX="$BRANCH"
-          INPUT="-input=false -var-file='.tfvars' -var='ENV=${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}' -var='AWS_REGION=${{ secrets.AWS_REGION }}'"
+          INPUT="-input=false -var-file='.tfvars' -var='RESOURCES_PREFIX=$RESOURCES_PREFIX'"
 
           echo "MAIN_WORKSPACE=$MAIN_WORKSPACE" >> "$GITHUB_OUTPUT"
           echo "WORKSPACE=$WORKSPACE" >> "$GITHUB_OUTPUT"
@@ -115,7 +115,7 @@ jobs:
 
       - name: Cache Build
         id: cache-build
-        if: github.event.action != 'closed'
+        if: github.event.action == 'closed'
         uses: actions/cache@v3
         with:
           # the docs say that "the default branch cache is available to other branches".
@@ -123,18 +123,18 @@ jobs:
           key: build-output-${{ steps.set_env.outputs.BRANCH }}
 
       - name: Setup java
-        if: github.event.action != 'closed' && (steps.cache-build.outputs.cache-hit != 'true' || steps.check_backend_changes.outputs.changed == 'true')
+        if: github.event.action == 'closed' && (steps.cache-build.outputs.cache-hit != 'true' || steps.check_backend_changes.outputs.changed == 'true')
         uses: actions/setup-java@v3
         with:
           distribution: temurin
           java-version: 11
 
       - name: Setup gradle
-        if: github.event.action != 'closed' && (steps.cache-build.outputs.cache-hit != 'true' || steps.check_backend_changes.outputs.changed == 'true')
+        if: github.event.action == 'closed' && (steps.cache-build.outputs.cache-hit != 'true' || steps.check_backend_changes.outputs.changed == 'true')
         uses: gradle/gradle-build-action@v2
 
       - name: Build backend
-        if: github.event.action != 'closed' && (steps.cache-build.outputs.cache-hit != 'true' || steps.check_backend_changes.outputs.changed == 'true')
+        if: github.event.action == 'closed' && (steps.cache-build.outputs.cache-hit != 'true' || steps.check_backend_changes.outputs.changed == 'true')
         working-directory: backend
         run: ./gradlew build
 
