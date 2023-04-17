@@ -39,7 +39,7 @@ resource "aws_cloudwatch_log_group" "hello_world" {
 }
 
 resource "aws_iam_role" "lambda_exec" {
-  name = "serverless_lambda"
+  name = "${local.LINE_PREFIX}serverless_lambda"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -72,12 +72,6 @@ resource "aws_apigatewayv2_route" "hello_world" {
 
   route_key = "GET /hello"
   target    = "integrations/${aws_apigatewayv2_integration.hello_world.id}"
-}
-
-resource "aws_cloudwatch_log_group" "api_gw" {
-  name = "/aws/api_gw/${aws_apigatewayv2_api.lambda.name}"
-
-  retention_in_days = 30
 }
 
 resource "aws_lambda_permission" "api_gw" {
