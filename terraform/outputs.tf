@@ -16,3 +16,9 @@ output "base_url" {
 
   value = aws_apigatewayv2_stage.lambda.invoke_url
 }
+
+output "domain_name" {
+  description = "Base URL for API Gateway stage."
+
+  value = aws_apigatewayv2_domain_name.lambda.domain_name
+}

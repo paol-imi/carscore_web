@@ -45,6 +45,7 @@ name: "Run Terraform"
 #       (setup the Terraform Cloud backend)
 #   4) Run Terraform destroy, then delete the workspace
 
+
 on:
   push:
     branches: [main] # [main, dev]
@@ -89,12 +90,12 @@ jobs:
       - name: Set environment
         id: set_env
         run: |
-          REF="${{ github.event_name == 'pull_request' && github.base_ref || github.ref }}"
+          REF="${{ github.event_name == 'pull_request' && github.head_ref || github.ref }}"
           BRANCH=$(basename "$REF")
           MAIN_WORKSPACE="cars-workspace-branch-main"
           WORKSPACE="cars-workspace-branch-$BRANCH"
           [[ "$BRANCH" == "main" ]] && RESOURCES_PREFIX="" || RESOURCES_PREFIX="$BRANCH"
-          INPUT='-input=false -var-file=".tfvars" -var="RESOURCES_PREFIX=$(echo $RESOURCES_PREFIX)"'
+          INPUT="-input=false -var-file='.tfvars' -var='RESOURCES_PREFIX=$RESOURCES_PREFIX'"
 
           echo "MAIN_WORKSPACE=$MAIN_WORKSPACE" >> "$GITHUB_OUTPUT"
           echo "WORKSPACE=$WORKSPACE" >> "$GITHUB_OUTPUT"
@@ -105,7 +106,7 @@ jobs:
 
       - name: Check for changes in backend
         id: check_backend_changes
-        if: github.event.action == 'closed'
+        if: github.event.action != 'closed'
         run: |
           if git diff --quiet HEAD^ HEAD -- backend ; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
@@ -115,7 +116,7 @@ jobs:
 
       - name: Cache Build
         id: cache-build
-        if: github.event.action == 'closed'
+        if: github.event.action != 'closed'
         uses: actions/cache@v3
         with:
           # the docs say that "the default branch cache is available to other branches".
@@ -123,18 +124,18 @@ jobs:
           key: build-output-${{ steps.set_env.outputs.BRANCH }}
 
       - name: Setup java
-        if: github.event.action == 'closed' && (steps.cache-build.outputs.cache-hit != 'true' || steps.check_backend_changes.outputs.changed == 'true')
+        if: github.event.action != 'closed' && (steps.cache-build.outputs.cache-hit != 'true' || steps.check_backend_changes.outputs.changed == 'true')
         uses: actions/setup-java@v3
         with:
           distribution: temurin
           java-version: 11
 
       - name: Setup gradle
-        if: github.event.action == 'closed' && (steps.cache-build.outputs.cache-hit != 'true' || steps.check_backend_changes.outputs.changed == 'true')
+        if: github.event.action != 'closed' && (steps.cache-build.outputs.cache-hit != 'true' || steps.check_backend_changes.outputs.changed == 'true')
         uses: gradle/gradle-build-action@v2
 
       - name: Build backend
-        if: github.event.action == 'closed' && (steps.cache-build.outputs.cache-hit != 'true' || steps.check_backend_changes.outputs.changed == 'true')
+        if: github.event.action != 'closed' && (steps.cache-build.outputs.cache-hit != 'true' || steps.check_backend_changes.outputs.changed == 'true')
         working-directory: backend
         run: ./gradlew build
 
@@ -168,7 +169,7 @@ jobs:
                 "type": "workspaces"
               }
             }' \
-            https://app.terraform.io/api/v2/organizations/cars-org/workspaces
+            https://app.terraform.io/api/v2/organizations/cars-organization/workspaces
         continue-on-error: true
 
       # Run the Terraform init command to initialize the Terraform working directory

@@ -1,6 +1,6 @@
 
 locals {
-  DOT_PREFIX        = var.RESOURCES_PREFIX != "" ? "${var.RESOURCES_PREFIX}-" : ""
+  DOT_PREFIX        = var.RESOURCES_PREFIX != "" ? "${var.RESOURCES_PREFIX}." : ""
   LINE_PREFIX       = var.RESOURCES_PREFIX != "" ? "${var.RESOURCES_PREFIX}-" : ""
   UNDERSCORE_PREFIX = var.RESOURCES_PREFIX != "" ? "${var.RESOURCES_PREFIX}_" : ""
 }
@@ -70,4 +70,10 @@ resource "aws_apigatewayv2_api_mapping" "lambda" {
   api_id      = aws_apigatewayv2_api.lambda.id
   domain_name = aws_apigatewayv2_domain_name.lambda.id
   stage       = aws_apigatewayv2_stage.lambda.id
+}
+
+resource "aws_cloudwatch_log_group" "api_gw" {
+  name = "/aws/api_gw/${local.UNDERSCORE_PREFIX}${aws_apigatewayv2_api.lambda.name}"
+
+  retention_in_days = 30
 }
