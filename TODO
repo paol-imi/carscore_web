@@ -1,2 +1,5 @@
 - Automate dns CNAME record creation
+- Make grabdle zip file?
 - Sync build output from gradle to terraform
+  (for som ereason terraform fail to lookup outisde the root module, option 1
+  is to build inside the terraform folder, option 2 retry after gradle make zip)
