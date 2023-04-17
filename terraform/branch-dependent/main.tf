@@ -15,12 +15,12 @@ resource "aws_s3_bucket_acl" "bucket_acl" {
   acl    = "private"
 }
 
+# TODO: Move all the resources that are common in the shared workspace
 resource "aws_apigatewayv2_api" "lambda" {
   name          = "${local.UNDERSCORE_PREFIX}serverless_lambda_gw"
   protocol_type = "HTTP"
 }
 
-# TODO: Move all the resources that are common in a workspace share between branches
 resource "aws_apigatewayv2_stage" "lambda" {
   api_id = aws_apigatewayv2_api.lambda.id
 
@@ -72,10 +72,10 @@ resource "aws_cloudwatch_log_group" "api_gw" {
   retention_in_days = 30
 }
 
-resource "cloudflare_record" "api" {
-  zone_id = var.CLOUDFLARE_ZONE_ID
-  name    = "${local.DOT_PREFIX}api.carsdemo.win"
-  value   = aws_apigatewayv2_domain_name.lambda.domain_name
-  type    = "CNAME"
-  ttl     = 1
-}
+# resource "cloudflare_record" "api" {
+#  zone_id = var.CLOUDFLARE_ZONE_ID
+#  name    = "${local.DOT_PREFIX}api.carsdemo.win"
+#  value   = aws_apigatewayv2_domain_name.lambda.domain_name
+#  type    = "CNAME"
+#  ttl     = 1
+#}

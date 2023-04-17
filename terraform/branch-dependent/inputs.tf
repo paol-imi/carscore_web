@@ -29,25 +29,25 @@ variable "CERTIFICATE_BODY_PEM" {
   description = "Certificate body."
 }
 
-variable "CLOUDFLARE_EMAIL" {
-  type        = string
-  description = "Cloudflare email."
-}
+# variable "CLOUDFLARE_EMAIL" {
+#   type        = string
+#   description = "Cloudflare email."
+# }
 
-variable "CLOUDFLARE_API_KEY" {
-  type        = string
-  description = "Cloudflare API key."
-}
+# variable "CLOUDFLARE_API_KEY" {
+#   type        = string
+#   description = "Cloudflare API key."
+# }
 
-variable "CLOUDFLARE_ZONE_ID" {
-  type        = string
-  description = "Cloudflare zone id."
-}
+# variable "CLOUDFLARE_ZONE_ID" {
+#   type        = string
+#   description = "Cloudflare zone id."
+# }
 
-#variable "CLOUDFLARE_API_TOKEN" {
-#  type        = string
-#  description = "Cloudflare API token."
-#}
+# variable "CLOUDFLARE_API_TOKEN" {
+#   type        = string
+#   description = "Cloudflare API token."
+# }
 
 
 # variable "AWS_ROLE_ARN" {

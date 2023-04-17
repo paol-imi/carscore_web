@@ -11,13 +11,13 @@ provider "aws" {
   # }
 }
 
-provider "cloudflare" {
-  # FIXME: Terraform has problems in athenticating with CLOUDFLARE
-  # For now we use email and acces key
-  # api_token = var.CLOUDFLARE_API_TOKEN
-  email   = var.CLOUDFLARE_EMAIL
-  api_key = var.CLOUDFLARE_API_KEY
-}
+#  provider "cloudflare" {
+#   # FIXME: Terraform has problems in athenticating with CLOUDFLARE
+#   # For now we use email and acces key
+#   # api_token = var.CLOUDFLARE_API_TOKEN
+#   email   = var.CLOUDFLARE_EMAIL
+#   api_key = var.CLOUDFLARE_API_KEY
+# }
 
 terraform {
 
@@ -39,10 +39,10 @@ terraform {
       version = "~> 2.3.0"
     }
 
-    cloudflare = {
-      source  = "cloudflare/cloudflare"
-      version = "~> 3.0"
-    }
+    #    cloudflare = {
+    #      source  = "cloudflare/cloudflare"
+    #      version = "~> 3.0"
+    #    }
   }
 
   required_version = "~> 1.4.4"
