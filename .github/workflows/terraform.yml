@@ -106,7 +106,7 @@ jobs:
 
       - name: Check for changes in backend
         id: check_backend_changes
-        if: github.event.action == 'closed'
+        if: github.event.action != 'closed'
         run: |
           if git diff --quiet HEAD^ HEAD -- backend ; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
