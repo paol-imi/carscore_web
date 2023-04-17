@@ -136,12 +136,7 @@ jobs:
       - name: Build backend
         if: github.event.action != 'closed' && (steps.cache-build.outputs.cache-hit != 'true' || steps.check_backend_changes.outputs.changed == 'true')
         working-directory: backend
-        run: |
-          ./gradlew build
-          cd ../terraform/branch-dependent
-          ls
-          cd dist
-          ls
+        run: ./gradlew build
 
       # The setup-terraform action is responsible for installing Terraform and
       # configuring the Terraform CLI to use the Terraform Cloud API token
@@ -265,7 +260,10 @@ jobs:
       - name: Terraform Apply
         if: github.event.action != 'closed'
         working-directory: terraform/branch-dependent
-        run: terraform apply -auto-approve ${{ steps.set_env.outputs.INPUT }}
+        run: |
+          ls
+          ls dist
+          terraform apply -auto-approve ${{ steps.set_env.outputs.INPUT }}
 
       # Run the Terraform destroy command to destroy the Terraform execution plan
       - name: Terraform Destroy
