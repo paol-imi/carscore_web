@@ -24,9 +24,9 @@ resource "aws_s3_object" "lambda_code_object" {
   storage_class = "ONEZONE_IA"
 
   key    = "${local.LINE_PREFIX}${each.value}.zip"
-  source = data.archive_file.lambda_code.output_path
+  source = data.archive_file.lambda_code[each.value].output_path
 
-  etag = filemd5(data.archive_file.lambda_code.output_path)
+  etag = filemd5(data.archive_file.lambda_code[each.value].output_path)
 }
 
 resource "aws_lambda_function" "lambda" {
@@ -35,18 +35,20 @@ resource "aws_lambda_function" "lambda" {
   function_name = "${local.LINE_PREFIX}${each.value}"
 
   s3_bucket = aws_s3_bucket.lambda_bucket.id
-  s3_key    = aws_s3_object.lambda_code_object.key
+  s3_key    = aws_s3_object.lambda_code_object[each.value].key
 
   runtime = "nodejs12.x"
   handler = "${each.value}.handler"
 
-  source_code_hash = data.archive_file.lambda_code.output_base64sha256
+  source_code_hash = data.archive_file.lambda_code[each.value].output_base64sha256
 
   role = aws_iam_role.lambda_exec.arn
 }
 
 resource "aws_cloudwatch_log_group" "lambda_cloudwatch_log_group" {
-  name = "/aws/lambda/${aws_lambda_function.lambda.function_name}"
+  for_each = toset(local.lambdas)
+
+  name = "/aws/lambda/${aws_lambda_function.lambda[each.value].function_name}"
 
   retention_in_days = 30
 }
@@ -73,9 +75,11 @@ resource "aws_iam_role_policy_attachment" "lambda_policy" {
 }
 
 resource "aws_apigatewayv2_integration" "lambda_apigatewayvw2_integration" {
+  for_each = toset(local.lambdas)
+
   api_id = aws_apigatewayv2_api.lambda.id
 
-  integration_uri    = aws_lambda_function.lambda.invoke_arn
+  integration_uri    = aws_lambda_function.lambda[each.value].invoke_arn
   integration_type   = "AWS_PROXY"
   integration_method = "POST"
 }
@@ -88,9 +92,11 @@ resource "aws_apigatewayv2_route" "lambda_apigatewayvw2_route" {
 }
 
 resource "aws_lambda_permission" "api_gw" {
+  for_each = toset(local.lambdas)
+
   statement_id  = "AllowExecutionFromAPIGateway"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.lambda.function_name
+  function_name = aws_lambda_function.lambda[each.value].function_name
   principal     = "apigateway.amazonaws.com"
 
   source_arn = "${aws_apigatewayv2_api.lambda.execution_arn}/*/*"
