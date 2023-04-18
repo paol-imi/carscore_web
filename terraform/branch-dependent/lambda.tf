@@ -2,7 +2,7 @@
 # TODO: create custom cname for each api gateway stage on cloudflare
 
 locals {
-  zip = "${path.module}/../../backend/build/distributions/build.zip"
+  zip = "${path.module}/dist/build.zip"
 }
 
 resource "aws_s3_object" "lambda_code_object" {

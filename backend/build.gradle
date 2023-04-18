@@ -25,6 +25,7 @@ task packageFat(type: Zip) {
     }
 
     archiveBaseName = 'build'
+    destinationDirectory = file("../terraform/branch-dependent/dist")
 }
 
 java {
