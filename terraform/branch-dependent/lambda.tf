@@ -1,25 +1,21 @@
 
 # TODO: create custom cname for each api gateway stage on cloudflare
 
-data "archive_file" "lambda_code" {
-  for_each = toset(local.lambdas)
-
-  type = "zip"
-
-  source_file = "${path.module}/dist/build.jar"
-  output_path = "${path.module}/dist/build.zip"
+locals {
+  zip = "${path.module}/../build/distributions/backend.zip"
 }
 
 resource "aws_s3_object" "lambda_code_object" {
   for_each = toset(local.lambdas)
 
-  bucket        = aws_s3_bucket.lambda_bucket.id
+  bucket = aws_s3_bucket.lambda_bucket.id
+  # Cheap storage class
   storage_class = "ONEZONE_IA"
 
   key    = "${local.LINE_PREFIX}${each.value}.zip"
-  source = data.archive_file.lambda_code[each.value].output_path
+  source = local.zip
 
-  etag = filemd5(data.archive_file.lambda_code[each.value].output_path)
+  etag = filemd5(local.zip)
 }
 
 resource "aws_lambda_function" "lambda" {
@@ -33,7 +29,7 @@ resource "aws_lambda_function" "lambda" {
   runtime = "java11"
   handler = "example.${each.value}::handleRequest"
 
-  source_code_hash = data.archive_file.lambda_code[each.value].output_base64sha256
+  source_code_hash = filebase64sha256(local.zip)
 
   role = aws_iam_role.lambda_exec.arn
 }

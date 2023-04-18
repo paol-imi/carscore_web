@@ -68,11 +68,35 @@ env:
 concurrency: aws-${{ github.ref }}
 
 jobs:
+  environment:
+    name: "Environment"
+    runs-on: ubuntu-latest
+    outputs:
+      MAIN_WORKSPACE: ${{ steps.set_env.outputs.MAIN_WORKSPACE }}
+      WORKSPACE: ${{ steps.set_env.outputs.WORKSPACE }}
+      BRANCH: ${{ steps.set_env.outputs.BRANCH }}
+      INPUT: ${{ steps.set_env.outputs.INPUT }}
+    steps:
+      - name: Set environment
+        id: set_env
+        run: |
+          REF="${{ github.event_name == 'pull_request' && github.head_ref || github.ref }}"
+          BRANCH=$(basename "$REF")
+          MAIN_WORKSPACE="cars-workspace-branch-main"
+          WORKSPACE="cars-workspace-branch-$BRANCH"
+          [[ "$BRANCH" == "main" ]] && RESOURCES_PREFIX="" || RESOURCES_PREFIX="$BRANCH"
+          INPUT="-input=false -var-file='.tfvars' -var='RESOURCES_PREFIX=$RESOURCES_PREFIX'"
+
+          echo "MAIN_WORKSPACE=$MAIN_WORKSPACE" >> "$GITHUB_OUTPUT"
+          echo "WORKSPACE=$WORKSPACE" >> "$GITHUB_OUTPUT"
+          echo "BRANCH=$BRANCH" >> "$GITHUB_OUTPUT"
+          echo "INPUT=$INPUT" >> "$GITHUB_OUTPUT"
+
   # The terraform job is responsible for managing the Terraform lifecycle
   terraform:
     name: "Terraform"
     # WE can limit the job to only run on some branches here
-    # if: startsWith(github.head_ref, '')
+    if: startsWith(github.head_ref, '')
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -138,7 +162,10 @@ jobs:
       - name: Build backend
         if: github.event.action != 'closed' && !(steps.cache-build.outputs.cache-hit == 'true' && steps.check_backend_changes.outputs.changed == 'false')
         working-directory: backend
-        run: ./gradlew build
+        run: |
+          ./gradlew -q packageLibs
+          mv build/distributions/backend.zip ../terraform/branch-dependent/dist/layer.zip
+          ./gradlew build
 
       # The setup-terraform action is responsible for installing Terraform and
       # configuring the Terraform CLI to use the Terraform Cloud API token

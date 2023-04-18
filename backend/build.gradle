@@ -17,21 +17,14 @@ test {
     useJUnitPlatform()
 }
 
-task buildZip(type: Zip) {
+task packageFat(type: Zip) {
     from compileJava
     from processResources
     into('lib') {
         from configurations.runtimeClasspath
     }
 
-    archiveFileName = 'hello-word.zip'
-}
-
-task buildJar(type: Jar) {
-    from('src/main/java')
-    include('example/**')
     archiveBaseName = 'build'
-    destinationDirectory = file("../terraform/branch-dependent/dist")
 }
 
 java {
@@ -39,4 +32,4 @@ java {
     targetCompatibility = JavaVersion.VERSION_11
 }
 
-build.dependsOn buildJar
+build.dependsOn packageFat
