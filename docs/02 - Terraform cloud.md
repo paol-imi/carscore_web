@@ -3,16 +3,12 @@ links:
 - [Teraform Github actions](https://developer.hashicorp.com/terraform/tutorials/automation/github-actions)
 - [AWS OIDC terraform](https://labinhood.com/blog/2023/02/terraform-cloud-and-aws-via-openid-connect-oidc/) and [Terraform docs OICD](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/dynamic-provider-credentials/aws-configuration)
 
-TODO:
-
-- Terraform cloud with organization called terraform-organization
-- cars-terraform-branch-main must be present (look at -github/workflows/terraform)
-- Variable-set for all workspaces
-- Solve role arn
-
 # Set up Terraform Cloud
 
 ## Create an Organization on terraform cloud
+
+- Terraform cloud with organization called terraform-organization
+- cars-terraform-branch-main must be present (look at -github/workflows/terraform)
 
 ## Create workspace on Terraform cloud
 

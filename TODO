@@ -1,5 +1,11 @@
-- Automate dns CNAME record creation
-- Make grabdle zip file?
-- Sync build output from gradle to terraform
-  (for som ereason terraform fail to lookup outisde the root module, option 1
-  is to build inside the terraform folder, option 2 retry after gradle make zip)
+Terraform
+- Up to now we have only the shared-module deployed. In .github/workflow-wip
+there is the work in progress update to the terraform action to deploy also the shared module
+- Define the shared resources that have been deployed manually
+- Move some resources from dependent modules to shared module (like api-gateway)
+- Automate dns CNAME record creation, up to now terraform fails to connect to cloudflare
+- Solve auth problem with OICD in AWS (actually using credentials)
+
+AWS
+- Correctly setup the dns to link it with api-gateway
+- Make the gradle build more precise and efficient, and define a lambda layer.

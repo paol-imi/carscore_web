@@ -1,4 +1,6 @@
-Dependent workspace can access shared resources using `terraform_remote_state`
+Dependent workspace can access shared resources as described here https://developer.hashicorp.com/terraform/language/state/remote-state-data.
+
+One way is using `terraform_remote_state`
 
 ```tf
 data "terraform_remote_state" "shared" {
@@ -6,7 +8,7 @@ data "terraform_remote_state" "shared" {
   config = {
     organization = "my-org"
     workspaces = {
-      name = "my-shared-workspace"
+      name = shared_workspace_name
     }
   }
 }
