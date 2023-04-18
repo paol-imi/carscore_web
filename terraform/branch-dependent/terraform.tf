@@ -34,10 +34,6 @@ terraform {
       source  = "hashicorp/random"
       version = "~> 3.5.1"
     }
-    archive = {
-      source  = "hashicorp/archive"
-      version = "~> 2.3.0"
-    }
 
     #    cloudflare = {
     #      source  = "cloudflare/cloudflare"
