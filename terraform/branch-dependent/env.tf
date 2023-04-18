@@ -11,3 +11,8 @@ locals {
     "HandlerDivide",
   ]
 }
+
+
+locals {
+  zip = "dist/build.zip"
+}
