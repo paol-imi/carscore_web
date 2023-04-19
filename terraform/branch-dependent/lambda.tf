@@ -62,7 +62,7 @@ resource "aws_iam_role_policy_attachment" "vpc_permissions" {
 }
 
 resource "aws_iam_role_policy" "rds_proxy_permissions" {
-  name = "rds_proxy_permissions"
+  name = "lambda_rds_proxy_permissions"
   role = aws_iam_role.lambda_exec.id
 
   policy = jsonencode({
