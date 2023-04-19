@@ -122,6 +122,10 @@ jobs:
           path: backend/build/distributions/build.zip
           if-no-files-found: error
 
+  # TODO: Conditionally run steps (this cannot be done at job level since if is
+  #   evaluated before matrix expansion)
+  # if: (${{ matrix.module }} == 'shared' && needs.environment.outputs.IS_TERRAFORM_SHARED_CHANGED == 'true') || (${{ matrix.module }} == 'branch-dependent' && (needs.environment.outputs.IS_TERRAFORM_DEPENDENT_CHANGED == 'true' || needs.environment.outputs.IS_BACKEND_CHANGED == 'true'))
+
   # The terraform job is responsible for managing the Terraform lifecycle
   terraform:
     name: "Terraform"
@@ -132,7 +136,6 @@ jobs:
       max-parallel: 1
       matrix:
         module: ["shared", "branch-dependent"]
-    if: (${{ matrix.module }} == 'shared' && needs.environment.outputs.IS_TERRAFORM_SHARED_CHANGED == 'true') || (${{ matrix.module }} == 'branch-dependent' && (needs.environment.outputs.IS_TERRAFORM_DEPENDENT_CHANGED == 'true' || needs.environment.outputs.IS_BACKEND_CHANGED == 'true'))
     defaults:
       run:
         working-directory: terraform/${{ matrix.module }}
