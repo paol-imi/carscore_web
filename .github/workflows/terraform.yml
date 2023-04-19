@@ -162,7 +162,7 @@ jobs:
         run: |
           DEPENDENT_WORKSPACE=${{ env.DEPENDENT_WORKSPACE_PREFIX }}${{ needs.environment.outputs.BRANCH }}
 
-          if ${{ matrix.module }} == "branch-dependent" ; then      
+          if [ "${{ matrix.module }}" == "branch-dependent" ]; then      
             WORKSPACE=$DEPENDENT_WORKSPACE
             [[ "$BRANCH" == "main" ]] && RESOURCES_PREFIX="" || RESOURCES_PREFIX="$BRANCH"
             TERRAFORM_INPUT="-input=false -var-file='.tfvars' -var='RESOURCES_PREFIX=$RESOURCES_PREFIX'"
