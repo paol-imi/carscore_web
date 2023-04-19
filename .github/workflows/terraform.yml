@@ -77,7 +77,7 @@ jobs:
     name: "Environment"
     runs-on: ubuntu-latest
     outputs:
-      BRANCH: ${{ jobs.environment.outputs.BRANCH }}
+      BRANCH: ${{ steps.set_env.outputs.BRANCH }}
       IS_BACKEND_CHANGED: ${{ steps.check_backend_changes.outputs.BRANCH }}
     steps:
       - name: Checkout
