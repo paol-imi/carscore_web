@@ -76,6 +76,7 @@ jobs:
   environment:
     name: "Environment"
     runs-on: ubuntu-latest
+    if: github.event.action != 'closed'
     outputs:
       BRANCH: ${{ steps.set_env.outputs.BRANCH }}
       IS_BACKEND_CHANGED: ${{ steps.check_backend_changes.outputs.BRANCH }}
@@ -137,6 +138,11 @@ jobs:
         if: github.event.action != 'closed' && !(steps.cache-build.outputs.cache-hit == 'true' && needs.environment.outputs.CHANGED == 'false')
         run: ./gradlew build
 
+      - uses: actions/upload-artifact@v3
+        with:
+          name: my-artifact
+          path: build/distributions/build.zip
+
   # The terraform job is responsible for managing the Terraform lifecycle
   terraform:
     name: "Terraform"
@@ -193,6 +199,13 @@ jobs:
             }' \
             https://app.terraform.io/api/v2/organizations/cars-organization/workspaces
         continue-on-error: true
+
+      - name: Download artifact
+        if: github.event.action != 'closed' && matrix.module == 'branch-dependent'
+        uses: actions/download-artifact@v3
+        with:
+          name: my-artifact
+          path: dist
 
       # The setup-terraform action is responsible for installing Terraform and
       # configuring the Terraform CLI to use the Terraform Cloud API token
