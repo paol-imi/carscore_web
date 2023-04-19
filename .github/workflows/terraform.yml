@@ -106,7 +106,13 @@ jobs:
     name: "Backend"
     needs: [environment]
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
     steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
       - name: Cache Build
         id: cache-build
         if: github.event.action != 'closed'
@@ -129,7 +135,6 @@ jobs:
 
       - name: Build backend
         if: github.event.action != 'closed' && !(steps.cache-build.outputs.cache-hit == 'true' && needs.environment.outputs.CHANGED == 'false')
-        working-directory: backend
         run: ./gradlew build
 
   # The terraform job is responsible for managing the Terraform lifecycle
@@ -149,6 +154,9 @@ jobs:
       # Allow the workflow to write to the pull request
       pull-requests: write
     steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
       - name: environment
         id: environment
         run: |
