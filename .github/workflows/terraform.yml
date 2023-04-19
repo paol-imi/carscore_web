@@ -77,12 +77,8 @@ jobs:
     name: "Environment"
     runs-on: ubuntu-latest
     outputs:
-      BRANCH:
-        description: "The name of the current branch"
-        value: ${{ jobs.environment.outputs.BRANCH }}
-      IS_BACKEND_CHANGED:
-        description: "The name of the current branch"
-        value: ${{ steps.check_backend_changes.outputs.BRANCH }}
+      BRANCH: ${{ jobs.environment.outputs.BRANCH }}
+      IS_BACKEND_CHANGED: ${{ steps.check_backend_changes.outputs.BRANCH }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -147,7 +143,8 @@ jobs:
       matrix:
         module: ["shared", "branch-dependent"]
     defaults:
-      working-directory: terraform/${{ matrix.module }}
+      run:
+        working-directory: terraform/${{ matrix.module }}
     permissions:
       # Allow the workflow to write to the pull request
       pull-requests: write
