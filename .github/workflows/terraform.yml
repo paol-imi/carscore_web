@@ -127,9 +127,7 @@ jobs:
     name: "Terraform"
     runs-on: ubuntu-latest
     needs: [environment, backend]
-    if:
-      (matrix.module == 'shared' && needs.environment.outputs.IS_TERRAFORM_SHARED_CHANGED == 'true') ||
-      (matrix.module == 'branch-dependent' && (needs.environment.outputs.IS_TERRAFORM_DEPENDENT_CHANGED == 'true' || needs.environment.outputs.IS_BACKEND_CHANGED == 'true'))
+    if: (matrix.module == 'shared' && needs.environment.outputs.IS_TERRAFORM_SHARED_CHANGED == 'true') || (matrix.module == 'branch-dependent' && (needs.environment.outputs.IS_TERRAFORM_DEPENDENT_CHANGED == 'true' || needs.environment.outputs.IS_BACKEND_CHANGED == 'true'))
     strategy:
       # Hack to minimize code
       max-parallel: 1
