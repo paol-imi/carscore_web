@@ -114,21 +114,21 @@ jobs:
         with:
           # the docs say that "the default branch cache is available to other branches".
           path: ${{ env.GRADLE_BUILD_PATH }}
-          key: build-output-${{ jobs.environment.outputs.BRANCH }}
+          key: build-output-${{ needs.environment.outputs.BRANCH }}
 
       - name: Setup java
-        if: github.event.action != 'closed' && !(steps.cache-build.outputs.cache-hit == 'true' && jobs.environment.outputs.CHANGED == 'false')
+        if: github.event.action != 'closed' && !(steps.cache-build.outputs.cache-hit == 'true' && needs.environment.outputs.CHANGED == 'false')
         uses: actions/setup-java@v3
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
 
       - name: Setup gradle
-        if: github.event.action != 'closed' && !(steps.cache-build.outputs.cache-hit == 'true' && jobs.environment.outputs.CHANGED == 'false')
+        if: github.event.action != 'closed' && !(steps.cache-build.outputs.cache-hit == 'true' && needs.environment.outputs.CHANGED == 'false')
         uses: gradle/gradle-build-action@v2
 
       - name: Build backend
-        if: github.event.action != 'closed' && !(steps.cache-build.outputs.cache-hit == 'true' && jobs.environment.outputs.CHANGED == 'false')
+        if: github.event.action != 'closed' && !(steps.cache-build.outputs.cache-hit == 'true' && needs.environment.outputs.CHANGED == 'false')
         working-directory: backend
         run: ./gradlew build
 
@@ -152,7 +152,7 @@ jobs:
       - name: environment
         id: environment
         run: |
-          DEPENDENT_WORKSPACE=${{ env.DEPENDENT_WORKSPACE_PREFIX }}${{ jobs.environment.outputs.BRANCH }}
+          DEPENDENT_WORKSPACE=${{ env.DEPENDENT_WORKSPACE_PREFIX }}${{ needs.environment.outputs.BRANCH }}
 
           if {{ matrix.module }} == "branch-dependent" ; then      
             WORKSPACE=$DEPENDENT_WORKSPACE
@@ -285,7 +285,7 @@ jobs:
 
       # Run the Terraform apply command to apply the Terraform execution plan
       - name: Terraform Apply
-        if: github.event.action != 'closed' && !(${{ matrix.module }} == 'shared' && ${{ jobs.environment.outputs.BRANCH}} != 'main')
+        if: github.event.action != 'closed' && !(${{ matrix.module }} == 'shared' && ${{ needs.environment.outputs.BRANCH}} != 'main')
         run: terraform apply -auto-approve ${{ steps.environment.outputs.TERRAFORM_INPUT }}
 
       # Run the Terraform destroy command to destroy the Terraform execution plan
