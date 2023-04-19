@@ -1,50 +1,5 @@
 name: "Run Terraform"
 
-# On PUSH to main:
-#   0) Run terraform fmt
-#       (ensure conformity to Terraform style guide)
-#   1) Compute Terraform variables and set the TF_WORKSPACE environment variable
-#       (TF_WORKSPACE is used by Terraform CLI to select the Terraform Cloud
-#       workspace to use)
-#   2) Create the workspace of the Branch on Terraform Cloud if it not exists
-#       (We run this step even if the workspace should already exists, since we
-#       may have deleted the workspace manually)
-#   3) Run Terraform init
-#       (setup the Terraform Cloud backend)
-#   4) Run Terraform validate
-#       (ensure syntax is correct)
-#   5) Run Terraform apply
-#       (deploy the infrastructure)
-#
-# On PULL REQUEST opened (reopened) or updated to main:
-#   0) Run terraform fmt
-#       (ensure conformity to Terraform style guide)
-#   1) Compute Terraform variables and set the TF_WORKSPACE environment variable
-#       (TF_WORKSPACE is used by Terraform CLI to select the Terraform Cloud
-#       workspace to use)
-#   2) Create the workspace of the Branch on Terraform Cloud if it not exists
-#       (We run this step even if the workspace should already exists, since we
-#       may have deleted the workspace manually)
-#   3) Run Terraform init
-#       (setup the Terraform Cloud backend)
-#   4) Run Terraform validate
-#       (ensure syntax is correct)
-#   5) Run Terraform plan, continue if plan fails
-#       (show what will be deployed)
-#   6) Create of update a comment on the PR with the plan
-#       (even if plan failed)
-#   7) If the plan failed, exit with error
-#   8) Run Terraform apply
-#       (deploy the infrastructure)
-#
-# On PULL REQUEST closed to main:
-#   1) Compute Terraform variables and set the TF_WORKSPACE environment variable
-#       (TF_WORKSPACE is used by Terraform CLI to select the Terraform Cloud
-#       workspace to use)
-#   3) Run Terraform init
-#       (setup the Terraform Cloud backend)
-#   4) Run Terraform destroy, then delete the workspace
-
 on:
   push:
     branches: [main] # [main, dev]
@@ -64,8 +19,8 @@ env:
   TF_API_TOKEN: ${{ secrets.TF_API_TOKEN }}
   DEPENDENT_WORKSPACE_PREFIX: cars-workspace-branch-
   SHARED_WORKSPACE_NAME: cars-workspace-shared
+  BUILD_PATH: terraform/branch-dependent/dist
   # Backend configuration
-  GRADLE_BUILD_PATH: terraform/branch-dependent/dist
   JAVA_VERSION: 11
 
 # The aws group ensures that only one workflow at a time can modify the AWS
@@ -80,6 +35,8 @@ jobs:
     outputs:
       BRANCH: ${{ steps.set_env.outputs.BRANCH }}
       IS_BACKEND_CHANGED: ${{ steps.check_backend_changes.outputs.BRANCH }}
+      IS_TERRAFORM_SHARED_CHANGED: ${{ steps.check_terraform_shared_changes.outputs.BRANCH }}
+      IS_TERRAFORM_DEPENDENT_CHANGED: ${{ steps.check_terraform_dependent_changes.outputs.BRANCH }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -101,6 +58,26 @@ jobs:
             echo "IS_BACKEND_CHANGED=true" >> "$GITHUB_OUTPUT"
           else
             echo "IS_BACKEND_CHANGED=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check for changes in terraform shared
+        id: check_terraform_shared_changes
+        if: github.event.action != 'closed'
+        run: |
+          if git diff --quiet HEAD^ HEAD -- terraform/shared ; then
+            echo "IS_TERRAFORM_SHARED_CHANGED=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "IS_TERRAFORM_SHARED_CHANGED=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check for changes in terraform dependent
+        id: check_terraform_dependent_changes
+        if: github.event.action != 'closed'
+        run: |
+          if git diff --quiet HEAD^ HEAD -- terraform/branch-dependent ; then
+            echo "IS_TERRAFORM_DEPENDENT_CHANGED=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "IS_TERRAFORM_DEPENDENT_CHANGED=false" >> "$GITHUB_OUTPUT"
           fi
 
   backend:
@@ -150,6 +127,9 @@ jobs:
     name: "Terraform"
     runs-on: ubuntu-latest
     needs: [environment, backend]
+    if:
+      (matrix.module == 'shared' && needs.environment.outputs.IS_TERRAFORM_SHARED_CHANGED == 'true') ||
+      (matrix.module == 'branch-dependent' && (needs.environment.outputs.IS_TERRAFORM_DEPENDENT_CHANGED == 'true' || needs.environment.outputs.IS_BACKEND_CHANGED == 'true'))
     strategy:
       # Hack to minimize code
       max-parallel: 1
@@ -207,7 +187,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: my-artifact
-          path: terraform/${{ matrix.module }}/dist
+          path: ${{ env.BUILD_PATH }}
 
       # The setup-terraform action is responsible for installing Terraform and
       # configuring the Terraform CLI to use the Terraform Cloud API token
