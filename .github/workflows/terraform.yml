@@ -22,6 +22,7 @@ env:
   BUILD_PATH: terraform/branch-dependent/dist
   # Backend configuration
   JAVA_VERSION: 11
+  GRADLE_BUILD_PATH: backend/build/distributions
 
 # The aws group ensures that only one workflow at a time can modify the AWS
 # infrastructure (even if Terraform cloud is already handling concurrent jobs).
