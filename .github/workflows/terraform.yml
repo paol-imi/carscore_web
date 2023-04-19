@@ -207,7 +207,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: my-artifact
-          path: dist
+          path: terraform/${{ matrix.module }}/dist
 
       # The setup-terraform action is responsible for installing Terraform and
       # configuring the Terraform CLI to use the Terraform Cloud API token
