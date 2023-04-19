@@ -138,10 +138,12 @@ jobs:
         if: github.event.action != 'closed' && !(steps.cache-build.outputs.cache-hit == 'true' && needs.environment.outputs.CHANGED == 'false')
         run: ./gradlew build
 
-      - uses: actions/upload-artifact@v3
+      - name: Upload build
+        uses: actions/upload-artifact@v3
         with:
           name: my-artifact
-          path: build/distributions/build.zip
+          path: backend/build/distributions/build.zip
+          if-no-files-found: error
 
   # The terraform job is responsible for managing the Terraform lifecycle
   terraform:
