@@ -45,7 +45,7 @@ jobs:
       deployments: write
       actions: read
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       # Build and test the frontend
       - name: Build React App
