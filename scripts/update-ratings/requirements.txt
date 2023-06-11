@@ -1,0 +1,8 @@
+boto3
+pymysql
+requests
+sqlalchemy
+pandas
+numpy
+scikit-learn
+xgboost

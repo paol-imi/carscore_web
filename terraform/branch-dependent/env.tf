@@ -1,18 +1,15 @@
 locals {
-  DOT_PREFIX        = var.RESOURCES_PREFIX != "" ? "${var.RESOURCES_PREFIX}." : ""
-  LINE_PREFIX       = var.RESOURCES_PREFIX != "" ? "${var.RESOURCES_PREFIX}-" : ""
-  UNDERSCORE_PREFIX = var.RESOURCES_PREFIX != "" ? "${var.RESOURCES_PREFIX}_" : ""
+  api_lambda_code_path = "dist/build.zip"
+
+  java17_layer_path = "resources/java17layer.zip"
 }
 
-
 locals {
-  lambdas = [
-    "Handler",
-    "HandlerDivide",
+  api_endpoints = [
+    { method = "GET", path = "/address" },
+    { method = "GET", path = "/address/{id}" },
+    { method = "POST", path = "/address" },
+    { method = "PUT", path = "/address/{id}" },
+    { method = "DELETE", path = "/address/{id}" },
   ]
-}
-
-
-locals {
-  zip = "dist/build.zip"
 }

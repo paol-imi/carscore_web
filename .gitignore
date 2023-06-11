@@ -1,0 +1,30 @@
+# Compiled class file
+*.class
+
+# Log file
+*.log
+
+# IntelliJ files
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Eclipse files
+.settings/
+.classpath
+.project
+*.launch
+
+# Gradle files
+.gradle/
+backend/.gradle/
+build/
+backend/build
+backend/bin
+*.jar
+*.war
+*.ear
+
+# Visual Studio files
+.vscode/

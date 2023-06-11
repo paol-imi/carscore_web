@@ -1,0 +1,423 @@
+# TODO: The backend and script build are put in the same workflow of the one
+#       managing terraform because terraform needs the lambda code builds to be
+#       present before it can be applied.
+#
+#       This makes the build process consistent and simpler, but it has the
+#       drawbacks of making it really slow:
+#       1. If only on of those codebase changes, the whole jobs are re-done.
+#         Heuristics to optimize and skip some jobs are difficult to implement.
+#       2. Terraform is in general slow to load and deploy the new builds
+#
+#       We may move the build process to another workflow and share it to the
+#       terraform workflow solve point 1. Or even upload the changes directly
+#       from a github action and solve also 2. The main blocker for this is the
+#       very limited CI/CD capabilities of Github, as it (almost) does not allow to
+#       express dependencies between workflows.
+#       There may be different workaround for this (like wait-on check action)
+#       but it is very hard to achieve 100% consistency and correctness.
+#
+#       The heuristics (partially) designed for this may be enough powerful to
+#       solve point 1, most of it has been implemented and commented out in this
+#       file (see "Environment" job). Some details are still to be defined, like
+#       how to handle the "pull_request" event, which is a bit more complicated.
+#
+#       For the sake of this project, we will leave the build process in this
+#       workflow and we will try to optimize it as much as possible.
+#       Future work may consider moving the build process to another workflow,
+#       achieving slightly less that 100% correctness may be acceptable considering
+#       the impact of the speedup (almost surely acceptable).
+
+# TODO: If we maintain the build process in this workflow, there is anyway space
+#       for improvement. Up to now the shared and dependent terraform jobs
+#       are organized in the same job using a "matrix". This allow for low code
+#       duplication and good code maintainability, but it has the drawback of
+#       making it impossible to optimize the concurrency of the jobs.
+#       Up to now the single job with a matrix have as dependencies the backend
+#       and script jobs, But the backend and the script is only needed by the
+#       dependent job.
+
+name: "Run Terraform"
+
+on:
+  push:
+    branches: [main] # [main, dev]
+    # TODO: Find a way to reference this file without hardcoding the path
+    paths:
+      [
+        "terraform/**",
+        "backend/**",
+        "scripts/**",
+        ".github/workflows/terraform.yml",
+      ]
+  pull_request:
+    branches: [main] # [main, dev]
+    paths:
+      [
+        "terraform/**",
+        "backend/**",
+        "scripts/**",
+        ".github/workflows/terraform.yml",
+      ]
+    # TODO: the "edited" tag will make the workflow trigger when base branch is
+    #       changed (which is what we want), but it will also trigger when the
+    #       PR is edited (which we don't want). We leave this edge case open for
+    #       now to avoid over-complicating this workflow.
+    types: [opened, synchronize, reopened, closed]
+
+env:
+  ## Terraform configuration
+  TF_API_TOKEN: ${{ secrets.TF_API_TOKEN }}
+  DEPENDENT_WORKSPACE_PREFIX: cars-workspace-branch-
+  SHARED_WORKSPACE_NAME: cars-workspace-shared
+  DEPENDENT_BUILD_PATH: terraform/branch-dependent/dist
+  SHARED_BUILD_PATH: terraform/shared/dist
+  # Backend configuration
+  JAVA_VERSION: "17"
+  JAVA_DISTRIBUTION: "temurin"
+  GRADLE_BUILD_PATH: backend/build/distributions
+  BUILD_FILENAME: build.zip
+
+# The aws group ensures that only one workflow at a time can modify the AWS
+# infrastructure (even if Terraform cloud is already handling concurrent jobs).
+concurrency: aws-${{ github.ref }}
+
+jobs:
+  environment:
+    name: "Environment"
+    runs-on: ubuntu-latest
+    # Avoid running the workflow when the branch name starts with "no-workflow-".
+    # ALl the following jobs will be skipped as well since they depend on this one.
+    # TODO: Document better this feature.
+    if: github.event_name != 'pull_request' || !startsWith(github.head_ref, 'no-workflow-')
+    outputs:
+      BRANCH: ${{ steps.compute-branch-name.outputs.BRANCH }}
+      # backend-changed: ${{ steps.check-changes.outputs.backend-changed }}
+      # scripts-changed: ${{ steps.check-changes.outputs.scripts-changed }}
+      # terraform-shared-changed: ${{ steps.check-changes.outputs.terraform-shared-changed }}
+      # terraform-dependent-changed: ${{ steps.check-changes.outputs.terraform-dependent-changed }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Compute Branch variables
+        id: compute-branch-name
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "BRANCH=${{ github.head_ref }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "BRANCH=$(basename ${{ github.ref }})" >> "$GITHUB_OUTPUT"
+          fi
+
+      # TODO: This is an heuristics that will output, for each codebase, if it
+      #       has changed or not. This is used to skip the build process if the
+      #       codebase has not changed.
+      #
+      # - name: Check for changes in backend
+      #   id: check-changes
+      #   if: github.event.action != 'closed'
+      #   run: |
+      #     for path in "terraform/shared" "terraform/branch-dependent" "backend" "scripts"; do
+      #       git diff --quiet ${{ github.event.before }} ${{ github.event.after }} -- $path
+      #
+      #       if [[ $? -eq '0' ]]; then
+      #         echo "${path//\//-}-changed=false" >> "$GITHUB_OUTPUT"
+      #       else
+      #         echo "${path//\//-}-changed=true" >> "$GITHUB_OUTPUT"
+      #       fi
+      #     done
+      #
+      #
+      # The problem is that we should fetch the right amount of commits in the
+      # checkout action. It seems feasible for the push events, but for pull
+      # sync event may be much harder. Something like (NON-STANDARD SYNTAX):
+      #
+      # - name: Checkout
+      #   uses: actions/checkout@v3
+      #   with:
+      #     fetch-depth: ${{
+      #       # If this is a pull request event, get the number of commits in the PR event
+      #       # TODO: Check that those are the number of commits in the vent not in the entire PR
+      #       ((github.event_name == 'pull_request' && github.event.pull_request.commits) ||
+      #       # Otherwise, get the number of commits in the push event
+      #       # TODO: Check that we can "+1"
+      #       (github.event_name == 'push' && github.event.commits)) + 1 }}
+      #
+      #
+      # It is likely that to do this, we would need to fetch data from the
+      # Github web APIs.
+      #
+
+  backend:
+    name: "Backend"
+    needs: [environment]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      # - name: Cache Build
+      #   id: cache-build
+      #   if: github.event.action != 'closed'
+      #   uses: actions/cache@v3
+      #   with:
+      #     path: ${{ env.GRADLE_BUILD_PATH }}
+      #     key: build-output-${{ needs.environment.outputs.BRANCH }}
+
+      - name: Setup java
+        if: github.event.action != 'closed' # && !(steps.cache-build.outputs.cache-hit == 'true' && needs.environment.outputs.backend-changed == 'false')
+        uses: actions/setup-java@v3
+        with:
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Setup gradle
+        if: github.event.action != 'closed' # && !(steps.cache-build.outputs.cache-hit == 'true' && needs.environment.outputs.backend-changed == 'false')
+        uses: gradle/gradle-build-action@v2
+
+      # TODO: run tests
+      - name: Build backend
+        if: github.event.action != 'closed' # && !(steps.cache-build.outputs.cache-hit == 'true' && needs.environment.outputs.backend-changed == 'false')
+        run: ./gradlew build -x test
+
+      - name: Upload build
+        uses: actions/upload-artifact@v3
+        if: github.event.action != 'closed'
+        with:
+          name: backend-artifact
+          path: ${{ env.GRADLE_BUILD_PATH }}/${{ env.BUILD_FILENAME }}
+          if-no-files-found: error
+
+  scripts:
+    name: "Machine-learning scripts"
+    needs: [environment]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: scripts/update-ratings
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+
+      #      - name: Set up Python
+      #         uses: actions/setup-python@v2
+      #        if: github.event.action != 'closed'
+      #        with:
+      #          python-version: 3.8
+
+      #      - name: Install dependencies
+      #        if: github.event.action != 'closed'
+      #        run: |
+      #          pip install -r requirements.txt -t package
+      #          cp script.py package/
+
+      #      - name: Create .zip file
+      #        if: github.event.action != 'closed'
+      #        run: |
+      #          cd package
+      #          zip -r ../package.zip .
+
+      - name: Upload build
+        uses: actions/upload-artifact@v3
+        if: github.event.action != 'closed'
+        with:
+          name: script-artifact
+          path: | #scripts/update-ratings/package.zip
+            scripts/update-ratings/*.joblib
+          if-no-files-found: error
+
+  # The terraform job is responsible for managing the Terraform lifecycle
+  terraform:
+    name: "Terraform"
+    runs-on: ubuntu-latest
+    needs: [environment, backend, scripts]
+    strategy:
+      # Hack to minimize code duplication, we use a matrix to run the same job
+      # twice, once for the shared module and once for the branch-dependent module.
+      # This is needed because the branch-dependent module depends on the shared
+      # module, so we need to run the shared module first.
+      # The order of execution is guaranteed by the module names order.
+      max-parallel: 1
+      matrix:
+        module: ["shared", "branch-dependent"]
+    defaults:
+      run:
+        working-directory: terraform/${{ matrix.module }}
+    permissions:
+      contents: read
+      # Allow the workflow to write to the pull request
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: environment
+        id: environment
+        run: |
+          DEPENDENT_WORKSPACE=${{ env.DEPENDENT_WORKSPACE_PREFIX }}${{ needs.environment.outputs.BRANCH }}
+
+          if [ "${{ matrix.module }}" == "branch-dependent" ]; then      
+            WORKSPACE=$DEPENDENT_WORKSPACE
+            TERRAFORM_INPUT="-input=false -var-file='.tfvars' -var='BRANCH=${{ needs.environment.outputs.BRANCH }}'"
+          else
+            WORKSPACE=$SHARED_WORKSPACE_NAME
+            TERRAFORM_INPUT="-input=false -var-file='.tfvars'"
+          fi
+
+          echo "TERRAFORM_INPUT=$TERRAFORM_INPUT" >> "$GITHUB_OUTPUT"
+          echo 'TF_WORKSPACE='$WORKSPACE >> $GITHUB_ENV
+          echo 'WORKSPACE='$WORKSPACE >> $GITHUB_OUTPUT
+
+      # Create the workspace if it does not exist
+      - name: Create workspace
+        if: github.event.action != 'closed'
+        run: |
+          curl \
+            --header "Authorization: Bearer ${{ env.TF_API_TOKEN }}" \
+            --header "Content-Type: application/vnd.api+json" \
+            --request POST \
+            --data '{
+              "data": {
+                "attributes": {
+                  "name": "${{ steps.environment.outputs.WORKSPACE }}"
+                },
+                "type": "workspaces"
+              }
+            }' \
+            https://app.terraform.io/api/v2/organizations/cars-organization/workspaces
+        continue-on-error: true
+
+      - name: Download artifact
+        if: github.event.action != 'closed'
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ matrix.module == 'branch-dependent' && 'backend-artifact' || 'script-artifact' }}
+          path: ${{ matrix.module == 'branch-dependent' && env.DEPENDENT_BUILD_PATH || env.SHARED_BUILD_PATH }}
+
+      # Because Terraform expect the build artifact to be present on deletion
+      # we need to create a fake artifact if the pull request is closed.
+      - name: Fake artifact
+        if: github.event.action == 'closed'
+        run: |
+          mkdir -p dist
+          touch dist/${{ matrix.module == 'branch-dependent' && env.BUILD_FILENAME || 'package.zip' }}
+
+      # The setup-terraform action is responsible for installing Terraform and
+      # configuring the Terraform CLI to use the Terraform Cloud API token
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          cli_config_credentials_token: ${{ env.TF_API_TOKEN }}
+
+      # Run the Terraform fmt command to check the Terraform code for formatting
+      - name: Terraform Format
+        id: fmt
+        if: github.event.action != 'closed'
+        run: terraform fmt -check
+
+      # Run the Terraform init command to initialize the Terraform working directory
+      - name: Terraform Init
+        id: init
+        run: terraform init
+
+      # Run the Terraform validate command to validate the Terraform code
+      - name: Terraform Validate
+        id: validate
+        if: github.event.action != 'closed'
+        run: terraform validate -no-color
+
+      # Run the Terraform plan command to generate a Terraform execution plan
+      - name: Terraform Plan
+        id: plan
+        if: github.event_name == 'pull_request' && github.event.action != 'closed'
+        # The -var-file option is used to pass the Terraform variables file
+        # The -var option is used to pass the ENV variable
+        run: TF_WORKSPACE="${{ env.DEPENDENT_WORKSPACE_PREFIX }}main" terraform plan -no-color -input=false -var-file='.tfvars' ${{ matrix.module == 'branch-dependent' && '-var="BRANCH=main"' || '' }}
+        # Continue the workflow even if the Terraform plan command fails, so that
+        # the Terraform plan can be viewed in the pull request.
+        # The workflow will be killed later
+        continue-on-error: true
+
+      # Create a comment on the pull request with the Terraform plan
+      - name: Update Pull Request
+        uses: actions/github-script@v6
+        if: github.event_name == 'pull_request' && github.event.action != 'closed'
+        env:
+          PLAN: ${{ steps.plan.outputs.stdout }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            // Build the Comment body
+            const output = `### Terraform ${{ matrix.module }} plan
+
+            #### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
+            #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
+            #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
+            #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
+
+            <details><summary>Show Plan</summary>
+
+            \`\`\`terraform\n
+            ${process.env.PLAN}
+            \`\`\`
+
+            </details>800.513.328
+
+            *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
+
+            // Get the list of comments on the pull request
+            const commits = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+
+            // Check if the comment already exists
+            const comment = commits.data.find(
+              (comment) => comment.body.includes('### Terraform ${{ matrix.module }} plan'));
+
+            // Update or create the comment
+            if (comment) {
+              await github.rest.issues.updateComment({
+                comment_id: comment.id,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: output
+              })
+            } else {
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: output
+              })
+            }
+
+      # Fail the workflow if the Terraform plan step fails, this allows the pull
+      # request message to be written before the workflow is killed
+      - name: Terraform Plan Status
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
+
+      # Run the Terraform apply command to apply the Terraform execution plan
+      - name: Terraform Apply
+        if: github.event.action != 'closed' && (matrix.module != 'shared' || needs.environment.outputs.BRANCH == 'main')
+        run: terraform apply -auto-approve ${{ steps.environment.outputs.TERRAFORM_INPUT }}
+
+      # Run the Terraform destroy command to destroy the Terraform execution plan
+      - name: Terraform Destroy
+        if: github.event.action == 'closed' && matrix.module == 'branch-dependent'
+        run: |
+          terraform destroy -auto-approve ${{ steps.environment.outputs.TERRAFORM_INPUT }}
+          echo "TF_WORKSPACE=${{ env.SHARED_WORKSPACE_NAME }}" >> $GITHUB_ENV
+          terraform workspace delete ${{ steps.environment.outputs.WORKSPACE }}
+
+      # TODO: Move artifact deletion of a different job that run after this one
+      - name: Delete old artifact
+        uses: geekyeggo/delete-artifact@v2
+        with:
+          name: ${{ matrix.module == 'branch-dependent' && 'backend-artifact' || 'script-artifact' }}

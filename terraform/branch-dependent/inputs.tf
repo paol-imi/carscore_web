@@ -1,55 +1,40 @@
+/** TODO:
+  * - Replace AWS IAM authentication with OIDC.
+  * - Add (Fix) Clouflare authentication.
+  */
+
 variable "AWS_REGION" {
   type        = string
   description = "AWS region in which deploy the resources."
   default     = "us-east-1"
 }
 
-variable "RESOURCES_PREFIX" {
+variable "BRANCH" {
   type        = string
-  description = "Resources prefix."
+  description = "Branch name."
 }
 
-variable "AWS_ACCESS_KEY_ID" {
+variable "TF_API_TOKEN" {
   type        = string
-  description = "AWS access key id."
+  description = "Terraform Cloud API token."
 }
 
-variable "AWS_SECRET_ACCESS_KEY" {
+variable "GOOGLE_CLIENT_ID" {
   type        = string
-  description = "AWS secret access key."
+  description = "Google client id."
 }
 
-variable "PRIVATE_KEY_PEM" {
+variable "GOOGLE_CLIENT_SECRET" {
   type        = string
-  description = "Private key."
+  description = "Google client secret."
 }
 
-variable "CERTIFICATE_BODY_PEM" {
+variable "AZURE_CLIENT_ID" {
   type        = string
-  description = "Certificate body."
+  description = "Azure client id."
 }
 
-# variable "CLOUDFLARE_EMAIL" {
-#   type        = string
-#   description = "Cloudflare email."
-# }
-
-# variable "CLOUDFLARE_API_KEY" {
-#   type        = string
-#   description = "Cloudflare API key."
-# }
-
-# variable "CLOUDFLARE_ZONE_ID" {
-#   type        = string
-#   description = "Cloudflare zone id."
-# }
-
-# variable "CLOUDFLARE_API_TOKEN" {
-#   type        = string
-#   description = "Cloudflare API token."
-# }
-
-
-# variable "AWS_ROLE_ARN" {
-#   type = string
-# }
+variable "AZURE_CLIENT_SECRET" {
+  type        = string
+  description = "Azure client secret."
+}

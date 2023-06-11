@@ -1,11 +1,26 @@
 Terraform
-- Up to now we have only the shared-module deployed. In .github/workflow-wip
-there is the work in progress update to the terraform action to deploy also the shared module
-- Define the shared resources that have been deployed manually
-- Move some resources from dependent modules to shared module (like api-gateway)
-- Automate dns CNAME record creation, up to now terraform fails to connect to cloudflare
-- Solve auth problem with OICD in AWS (actually using credentials)
+
+- The terraform configuration is filled with `TODO:`s and `FIXME:`s that
+  documents the next steps to take to update the configuration.
+- reorganize the resources in modules, general resource renaming
+- Some information are replicated between Github actions env var, terraform
+  cloud env var, Hardcoded in Github workflows, hardcode in the terraform
+  configuration or hardcoded in the backend/frontend build tools (like backend
+  build path). Find a way to reorganize those with a single source of truth
+  (likely github env vars).
 
 AWS
-- Correctly setup the dns to link it with api-gateway
-- Make the gradle build more precise and efficient, and define a lambda layer.
+
+- THE RDS DB AS BEEN SET AS PUBLICLY ACCESSIBLE FOR DEBUGGING, REMOVE THE INBOUND
+  RULE OF ITS SECURITY GROUP
+- Correctly setup the dns and link it with api-gateway. (and CNAME record)
+
+BACKEND
+
+- In general Java and the spring boot framework are not designed for serverless,
+  but aws explains how to reduce cold starts time precisely for this framework.
+
+Github actions
+
+- The Github workflows are filled with `TODO:`s and `FIXME:`s that
+  documents the next steps to take to update the configuration.
